@@ -1,0 +1,13 @@
+# Compose 2.24.4+. Use only on a trusted lab network with host firewall rules.
+# Replace target variables in .env with the assigned machines' private addresses.
+services:
+  identity-service:
+    ports: ["9091:9090"]
+  course-service:
+    ports: ["9092:9090"]
+  grade-service:
+    ports: ["9093:9090"]
+  api-orchestrator:
+    ports: ["9090:9090"]
+  web-app:
+    ports: !override ["8080:8080"]

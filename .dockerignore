@@ -1,0 +1,8 @@
+.git
+.tools
+.evidence
+**/target
+.env
+secrets
+data
+*.log

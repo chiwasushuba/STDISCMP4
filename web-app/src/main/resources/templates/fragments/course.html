@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <th:block th:fragment="courseCard(course)">
+      <div class="course-card-top">
+        <span class="course-code" th:text="${course.code}"></span
+        ><span
+          class="tag"
+          th:classappend="${course.enrolled ? 'mint' : !course.open ? 'gray' : course.seats == 0 ? 'gray' : ''}"
+          th:text="${course.enrolled ? 'ENROLLED' : !course.open ? 'CLOSED' : course.seats == 0 ? 'FULL' : 'OPEN'}"
+        ></span>
+      </div>
+      <h3 th:text="${course.title}"></h3>
+      <p class="course-department">
+        <span th:text="${course.department}"></span
+        ><span aria-hidden="true"> · </span
+        ><span th:text="${course.units}"></span> units
+      </p>
+      <div class="course-meta">
+        <div>
+          <span class="meta-icon" aria-hidden="true">◷</span
+          ><span th:text="${course.schedule}"></span>
+        </div>
+        <div>
+          <span class="meta-icon" aria-hidden="true">⌖</span
+          ><span th:text="${course.room}"></span>
+        </div>
+        <div>
+          <span class="meta-icon" aria-hidden="true">○</span
+          ><span th:text="${course.faculty}"></span>
+        </div>
+      </div>
+      <div class="course-bottom">
+        <span th:if="${course.open and !course.enrolled}"
+          ><strong th:text="${course.seats}"></strong> seats left</span
+        ><span class="confirmed" th:if="${course.enrolled}"
+          >✓ Enrollment confirmed</span
+        ><span class="muted" th:if="${!course.open and !course.enrolled}"
+          >Enrollment closed</span
+        >
+        <form
+          th:if="${course.open and course.seats > 0 and !course.enrolled}"
+          th:action="@{/enroll}"
+          method="post"
+          data-enroll-form
+        >
+          <input type="hidden" name="courseId" th:value="${course.id}" /><button
+            type="submit"
+            class="enroll-button"
+            th:attr="aria-label=${'Enroll in ' + course.title}"
+          >
+            Enroll <span aria-hidden="true">+</span>
+          </button>
+        </form>
+      </div>
+    </th:block>
+  </body>
+</html>

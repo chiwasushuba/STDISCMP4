@@ -1,0 +1,38 @@
+syntax = "proto3";
+package northstar.v1;
+option java_package = "edu.northstar.contracts";
+option java_multiple_files = true;
+
+message Empty {}
+message LoginRequest { string email = 1; string password = 2; }
+message RefreshRequest { string refresh_token = 1; }
+message AuthReply { string access_token = 1; string refresh_token = 2; string name = 3; string role = 4; string user_id = 5; }
+message CourseQuery { string search = 1; string department = 2; bool enrolled_only = 3; }
+message Course { string id = 1; string code = 2; string title = 3; string department = 4; int32 units = 5; string schedule = 6; string room = 7; string faculty = 8; int32 capacity = 9; int32 seats = 10; bool open = 11; bool enrolled = 12; }
+message CourseList { repeated Course courses = 1; }
+message EnrollRequest { string course_id = 1; }
+message Receipt { string message = 1; }
+message GradeQuery { string term = 1; }
+message Grade { string student_id = 1; string student_name = 2; string course_code = 3; string course_title = 4; string term = 5; string value = 6; int32 units = 7; }
+message GradeList { repeated Grade grades = 1; }
+message TeachingClass { string course_code = 1; string course_title = 2; string term = 3; }
+message ClassList { repeated TeachingClass classes = 1; }
+message RosterQuery { string course_code = 1; string term = 2; }
+message GradeUpload { string course_code = 1; string term = 2; repeated GradeRow rows = 3; }
+message GradeRow { string student_id = 1; string value = 2; }
+
+service IdentityApi {
+  rpc Login(LoginRequest) returns (AuthReply);
+  rpc Refresh(RefreshRequest) returns (AuthReply);
+  rpc Logout(Empty) returns (Receipt);
+}
+service CourseApi {
+  rpc ListCourses(CourseQuery) returns (CourseList);
+  rpc Enroll(EnrollRequest) returns (Receipt);
+}
+service GradeApi {
+  rpc ListGrades(GradeQuery) returns (GradeList);
+  rpc ListClasses(Empty) returns (ClassList);
+  rpc Roster(RosterQuery) returns (GradeList);
+  rpc Upload(GradeUpload) returns (Receipt);
+}

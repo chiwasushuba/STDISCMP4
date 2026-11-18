@@ -1,0 +1,13 @@
+.tools/
+**/target/
+.env
+secrets/
+.evidence/
+*.log
+.idea/
+*.iml
+data/
+node_modules/
+test-results/
+playwright-report/
+deliverables/*.zip

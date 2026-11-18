@@ -1,0 +1,15 @@
+{
+  "name": "northstar-browser-checks",
+  "private": true,
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:faults": "playwright test --project=faults",
+    "format:web": "node scripts/format-web.cjs",
+    "format:web:check": "node scripts/format-web.cjs --check"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "axe-core": "4.14.0",
+    "prettier": "3.10.1"
+  }
+}

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sign in · Northstar</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="login-body">
+    <main class="login-layout">
+      <section class="login-story" aria-label="Northstar student portal">
+        <a class="brand brand-light" href="/login"
+          ><span class="brand-mark">✳</span
+          ><span
+            >northstar<span class="brand-sub">UNIVERSITY PORTAL</span></span
+          ></a
+        >
+        <div class="story-copy">
+          <span class="eyebrow">YOUR NEXT CHAPTER</span>
+          <h1>A clear path.<br />A bright future.</h1>
+          <p>
+            Your courses, your progress, your possibilities.<br />One place to
+            make it all happen.
+          </p>
+          <div class="orbit" aria-hidden="true">
+            <div class="orbit-inner"></div>
+            <span class="orbit-star">✳</span
+            ><span class="orbit-label">Keep moving forward.</span>
+          </div>
+        </div>
+        <div class="story-footer">Learn with purpose. Go further.</div>
+      </section>
+      <section class="login-form-panel">
+        <div class="login-form-wrap">
+          <span class="eyebrow accent">WELCOME TO NORTHSTAR</span>
+          <h2>Good to see you.</h2>
+          <p class="muted">Sign in to your university account to continue.</p>
+          <div
+            class="notice error"
+            role="alert"
+            th:if="${error}"
+            th:text="${error}"
+          ></div>
+          <div class="notice success" role="status" th:if="${param.signedout}">
+            You’re signed out of this browser.
+          </div>
+          <div class="notice warning" th:if="${param.revocationPending}">
+            The identity service is unavailable. Your server session could not
+            be revoked and will expire automatically.
+          </div>
+          <form th:action="@{/login}" method="post" class="stack">
+            <label for="email">University email</label
+            ><input
+              id="email"
+              name="email"
+              type="email"
+              maxlength="200"
+              autocomplete="username"
+              placeholder="you@northstar.edu"
+              th:value="${email}"
+              required
+            />
+            <label for="password">Password</label
+            ><input
+              id="password"
+              name="password"
+              type="password"
+              maxlength="100"
+              autocomplete="current-password"
+              placeholder="Enter your password"
+              required
+            />
+            <button class="button primary full" type="submit">
+              Sign in <span aria-hidden="true">↗</span>
+            </button>
+          </form>
+          <p class="login-help">
+            Students and faculty use the same sign-in.<br />Your account opens
+            the right workspace for you.
+          </p>
+          <div class="login-footnote">
+            <span class="small-star">✳</span> A little planning. A great
+            semester.
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

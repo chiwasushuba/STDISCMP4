@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title th:text="${title + ' · Northstar'}">Northstar</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="/"
+          ><span class="brand-mark">✳</span
+          ><span
+            >northstar<span class="brand-sub">UNIVERSITY PORTAL</span></span
+          ></a
+        >
+        <div
+          class="workspace-label"
+          th:text="${user.role == 'FACULTY' ? 'FACULTY WORKSPACE' : 'STUDENT WORKSPACE'}"
+        ></div>
+        <nav class="main-nav" aria-label="Main navigation">
+          <th:block th:if="${user.role == 'STUDENT'}">
+            <a
+              href="/"
+              th:classappend="${page == 'dashboard' ? 'active' : ''}"
+              th:attr="aria-current=${page == 'dashboard' ? 'page' : null}"
+              ><span class="nav-icon" aria-hidden="true">◫</span>Overview</a
+            >
+            <a
+              href="/courses"
+              th:classappend="${page == 'courses' ? 'active' : ''}"
+              th:attr="aria-current=${page == 'courses' ? 'page' : null}"
+              ><span class="nav-icon" aria-hidden="true">▤</span>Course
+              catalog</a
+            >
+            <a
+              href="/enrollment"
+              th:classappend="${page == 'enrollment' ? 'active' : ''}"
+              th:attr="aria-current=${page == 'enrollment' ? 'page' : null}"
+              ><span class="nav-icon" aria-hidden="true">▦</span>My
+              enrollment</a
+            >
+            <a
+              href="/grades"
+              th:classappend="${page == 'grades' ? 'active' : ''}"
+              th:attr="aria-current=${page == 'grades' ? 'page' : null}"
+              ><span class="nav-icon" aria-hidden="true">◷</span>Grade
+              history</a
+            >
+          </th:block>
+          <a
+            th:if="${user.role == 'FACULTY'}"
+            href="/faculty"
+            class="active"
+            aria-current="page"
+            ><span class="nav-icon" aria-hidden="true">▤</span>Classes &amp;
+            grades</a
+          >
+        </nav>
+        <div class="sidebar-note">
+          <span class="small-star">✳</span
+          ><strong>Your next chapter<br />starts here.</strong>
+          <p>Make room for what’s next.</p>
+        </div>
+        <div class="sidebar-bottom">
+          <div class="profile">
+            <span class="avatar" th:text="${user.initials}">A</span>
+            <div>
+              <strong th:text="${user.name}">Alex Morgan</strong
+              ><span th:text="${user.id}"></span>
+            </div>
+          </div>
+          <form th:action="@{/signout}" method="post">
+            <button class="signout" type="submit">
+              Sign out <span aria-hidden="true">↗</span>
+            </button>
+          </form>
+        </div>
+      </aside>
+      <div class="main-column">
+        <header class="topbar">
+          <div>
+            <span class="breadcrumb">Workspace</span
+            ><span class="breadcrumb-slash">/</span
+            ><strong
+              th:text="${page == 'dashboard' ? 'Overview' : page == 'courses' ? 'Course catalog' : page == 'enrollment' ? 'My enrollment' : page == 'grades' ? 'Grade history' : 'Classes & grades'}"
+            ></strong>
+          </div>
+          <span class="term-chip"
+            ><span class="status-dot"></span
+            ><span th:text="${currentTerm}"></span
+          ></span>
+        </header>
+        <main id="main" class="main-content">
+          <div class="page-heading">
+            <div>
+              <div
+                class="eyebrow accent"
+                th:text="${user.role == 'FACULTY' ? 'TEACH. GUIDE. INSPIRE.' : 'MAKE THIS SEMESTER YOURS'}"
+              ></div>
+              <h1 th:text="${title}"></h1>
+              <p class="muted" th:text="${subtitle}"></p>
+            </div>
+            <span
+              class="heading-index"
+              aria-hidden="true"
+              th:text="${page == 'dashboard' ? '01 /' : page == 'courses' ? '02 /' : page == 'enrollment' ? '03 /' : page == 'grades' ? '04 /' : '01 /'}"
+            ></span>
+          </div>
+          <div
+            class="notice success"
+            role="status"
+            th:if="${success}"
+            th:text="${success}"
+          ></div>
+          <div
+            class="notice error"
+            role="alert"
+            th:if="${error}"
+            th:text="${error}"
+          ></div>
+
+          <th:block th:if="${page == 'dashboard'}">
+            <section class="welcome-banner">
+              <div>
+                <span class="eyebrow">A NEW SEMESTER. NEW POSSIBILITIES.</span>
+                <h2>
+                  Welcome back, <span th:text="${user.firstName}">Alex</span>.
+                </h2>
+                <p>Your next great idea might start with your next class.</p>
+                <a class="button light" href="/courses"
+                  >Explore courses <span aria-hidden="true">↗</span></a
+                >
+              </div>
+              <div class="banner-art" aria-hidden="true">
+                <div class="art-ring"></div>
+                <span>✳</span>
+              </div>
+            </section>
+            <section class="stats-grid" aria-label="Semester summary">
+              <div class="stat">
+                <span>Enrolled courses</span
+                ><strong
+                  th:text="${courseError != null ? '—' : #lists.size(enrolled)}"
+                  >0</strong
+                ><small>Your confirmed selections</small>
+              </div>
+              <div class="stat">
+                <span>Academic units</span
+                ><strong th:text="${courseError != null ? '—' : units}"
+                  >0</strong
+                ><small>For the current semester</small>
+              </div>
+              <div class="stat">
+                <span>Open courses</span
+                ><strong th:text="${courseError != null ? '—' : openCourses}"
+                  >0</strong
+                ><small>Ready for your next step</small>
+              </div>
+            </section>
+            <section class="section-block">
+              <div class="section-heading">
+                <div>
+                  <span class="eyebrow muted">BUILD YOUR SEMESTER</span>
+                  <h2>Find something worth learning.</h2>
+                </div>
+                <a class="text-link" href="/courses"
+                  >View catalog <span aria-hidden="true">↗</span></a
+                >
+              </div>
+              <div th:if="${courseError}" class="unavailable">
+                <strong>Courses are taking a short break.</strong>
+                <p th:text="${courseError}"></p>
+                <a href="/">Try again</a>
+              </div>
+              <div class="course-grid" th:if="${courseError == null}">
+                <article
+                  class="course-card"
+                  th:each="course, iter : ${courses}"
+                  th:if="${iter.index < 3}"
+                  th:insert="~{fragments/course :: courseCard(${course})}"
+                ></article>
+              </div>
+            </section>
+            <section class="section-block">
+              <div class="section-heading">
+                <div>
+                  <span class="eyebrow muted">KEEP MOVING FORWARD</span>
+                  <h2>Your academic record</h2>
+                </div>
+                <a class="text-link" href="/grades"
+                  >View grades <span aria-hidden="true">↗</span></a
+                >
+              </div>
+              <div th:if="${gradeError}" class="unavailable">
+                <strong>Grades are temporarily unavailable.</strong>
+                <p th:text="${gradeError}"></p>
+                <a href="/">Try again</a>
+              </div>
+              <div th:if="${gradeError == null}" class="record-summary">
+                <span class="record-icon" aria-hidden="true">↗</span>
+                <div>
+                  <strong
+                    ><span th:text="${#lists.size(grades)}"></span> published
+                    grade records</strong
+                  >
+                  <p class="muted">Your hard work, semester by semester.</p>
+                </div>
+                <a class="button secondary" href="/grades">Review progress</a>
+              </div>
+            </section>
+          </th:block>
+
+          <th:block th:if="${page == 'courses'}">
+            <form class="filter-bar" action="/courses" method="get">
+              <div class="search-field">
+                <label class="sr-only" for="search">Search courses</label
+                ><span aria-hidden="true">⌕</span
+                ><input
+                  id="search"
+                  name="search"
+                  type="search"
+                  maxlength="100"
+                  placeholder="Search by course name or code…"
+                  th:value="${search}"
+                />
+              </div>
+              <label class="sr-only" for="department">Department</label
+              ><select id="department" name="department">
+                <option value="">All departments</option>
+                <option
+                  th:each="dept : ${ {'Computer Science','Mathematics','General Education'} }"
+                  th:value="${dept}"
+                  th:text="${dept}"
+                  th:selected="${department == dept}"
+                ></option></select
+              ><button class="button primary" type="submit">
+                Find courses
+              </button>
+            </form>
+            <div th:if="${courseError}" class="unavailable">
+              <strong>We couldn’t load the catalog.</strong>
+              <p th:text="${courseError}"></p>
+              <a href="/courses">Try again</a>
+            </div>
+            <th:block th:if="${courseError == null}"
+              ><div class="result-line">
+                <strong
+                  ><span th:text="${#lists.size(courses)}"></span>
+                  courses</strong
+                ><span>Current semester offerings</span>
+              </div>
+              <div class="course-grid">
+                <article
+                  class="course-card"
+                  th:each="course : ${courses}"
+                  th:insert="~{fragments/course :: courseCard(${course})}"
+                ></article>
+              </div>
+              <div class="empty-state" th:if="${#lists.isEmpty(courses)}">
+                <h2>No courses found.</h2>
+                <p>Try another search or choose a different department.</p>
+                <a class="button secondary" href="/courses">Clear filters</a>
+              </div></th:block
+            >
+          </th:block>
+
+          <th:block th:if="${page == 'enrollment'}">
+            <div th:if="${courseError}" class="unavailable">
+              <strong>Your enrollment is temporarily unavailable.</strong>
+              <p th:text="${courseError}"></p>
+              <a href="/enrollment">Try again</a>
+            </div>
+            <th:block th:if="${courseError == null}"
+              ><div class="enrollment-strip">
+                <div>
+                  <span class="eyebrow">YOUR SEMESTER PLAN</span>
+                  <h2>
+                    <span th:text="${#lists.size(enrolled)}"></span> courses.
+                    <span th:text="${units}"></span> units. Your next chapter.
+                  </h2>
+                </div>
+                <a class="button primary" href="/courses"
+                  >Add a course <span aria-hidden="true">+</span></a
+                >
+              </div>
+              <div class="empty-state" th:if="${#lists.isEmpty(enrolled)}">
+                <span class="empty-icon" aria-hidden="true">▤</span>
+                <h2>Your semester is a blank canvas.</h2>
+                <p>
+                  Choose your first course from the catalog. Your confirmed
+                  selections will appear here.
+                </p>
+                <a class="button primary" href="/courses">Explore courses ↗</a>
+              </div>
+              <div class="course-grid" th:unless="${#lists.isEmpty(enrolled)}">
+                <article
+                  class="course-card"
+                  th:each="course : ${enrolled}"
+                  th:insert="~{fragments/course :: courseCard(${course})}"
+                ></article></div
+            ></th:block>
+          </th:block>
+
+          <th:block th:if="${page == 'grades'}">
+            <div th:if="${gradeError}" class="unavailable">
+              <strong>We couldn’t load your grades.</strong>
+              <p th:text="${gradeError}"></p>
+              <a href="/grades">Try again</a>
+            </div>
+            <th:block th:if="${gradeError == null}"
+              ><form
+                class="filter-bar grade-filter"
+                action="/grades"
+                method="get"
+              >
+                <label for="term">Academic semester</label
+                ><select id="term" name="term">
+                  <option value="">All semesters</option>
+                  <option
+                    th:each="term : ${terms}"
+                    th:text="${term}"
+                    th:value="${term}"
+                    th:selected="${selectedTerm == term}"
+                  ></option></select
+                ><button class="button secondary" type="submit">
+                  Show grades
+                </button>
+              </form>
+              <div class="table-panel">
+                <div class="table-scroll">
+                  <table>
+                    <caption class="sr-only">
+                      Published grades
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Course</th>
+                        <th scope="col">Semester</th>
+                        <th scope="col">Units</th>
+                        <th scope="col">Grade</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr th:each="grade : ${grades}">
+                        <td>
+                          <strong th:text="${grade.courseCode}"></strong
+                          ><span
+                            class="cell-sub"
+                            th:text="${grade.courseTitle}"
+                          ></span>
+                        </td>
+                        <td th:text="${grade.term}"></td>
+                        <td th:text="${grade.units}"></td>
+                        <td>
+                          <span
+                            class="grade-pill"
+                            th:text="${grade.value}"
+                          ></span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="empty-state" th:if="${#lists.isEmpty(grades)}">
+                  <h2>No published grades yet.</h2>
+                  <p>Grades appear here after your faculty publishes them.</p>
+                </div>
+              </div>
+              <p class="table-note">
+                Grading scale: 1.00 is the highest grade · INC = Incomplete ·
+                DRP = Dropped
+              </p></th:block
+            >
+          </th:block>
+
+          <th:block th:if="${page == 'faculty'}">
+            <div th:if="${gradeError}" class="unavailable">
+              <strong
+                >Your teaching workspace is temporarily unavailable.</strong
+              >
+              <p th:text="${gradeError}"></p>
+              <a href="/faculty">Try again</a>
+            </div>
+            <th:block th:if="${gradeError == null}"
+              ><div class="class-tabs" aria-label="Assigned classes">
+                <a
+                  th:each="item : ${classes}"
+                  th:href="@{/faculty(code=${item.courseCode},term=${item.term})}"
+                  th:classappend="${selectedClass != null and selectedClass.courseCode == item.courseCode and selectedClass.term == item.term ? 'selected' : ''}"
+                  ><strong th:text="${item.courseCode}"></strong
+                  ><span th:text="${item.term}"></span
+                ></a>
+              </div>
+              <div class="empty-state" th:if="${selectedClass == null}">
+                <h2>No assigned classes yet.</h2>
+                <p>
+                  Your classes will appear when teaching assignments are
+                  available.
+                </p>
+              </div>
+              <th:block th:if="${selectedClass != null}"
+                ><div class="faculty-grid">
+                  <section class="table-panel">
+                    <div class="panel-header">
+                      <div>
+                        <span
+                          class="eyebrow accent"
+                          th:text="${selectedClass.courseCode}"
+                        ></span>
+                        <h2 th:text="${selectedClass.courseTitle}"></h2>
+                        <p class="muted">
+                          <span th:text="${#lists.size(roster)}"></span>
+                          students in the class roster
+                        </p>
+                      </div>
+                      <span class="tag">YOUR CLASS</span>
+                    </div>
+                    <div class="table-scroll">
+                      <table>
+                        <caption class="sr-only">
+                          Class grade roster
+                        </caption>
+                        <thead>
+                          <tr>
+                            <th scope="col">Student</th>
+                            <th scope="col">Student ID</th>
+                            <th scope="col">Grade</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr th:each="grade : ${roster}">
+                            <td>
+                              <strong th:text="${grade.studentName}"></strong>
+                            </td>
+                            <td th:text="${grade.studentId}"></td>
+                            <td>
+                              <span
+                                th:class="${grade.value == '' ? 'muted' : 'grade-pill'}"
+                                th:text="${grade.value == '' ? 'Not published' : grade.value}"
+                              ></span>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                  <section class="upload-panel">
+                    <span class="eyebrow accent">FROM FILE TO FINAL</span>
+                    <h2>Publish class grades</h2>
+                    <p class="muted">
+                      Download the roster, fill in the grades, then upload your
+                      CSV to review it.
+                    </p>
+                    <a
+                      class="text-link"
+                      th:href="@{/faculty/template(code=${selectedClass.courseCode},term=${selectedClass.term})}"
+                      >Download roster CSV <span aria-hidden="true">↓</span></a
+                    >
+                    <form
+                      th:action="@{/faculty/preview}"
+                      method="post"
+                      enctype="multipart/form-data"
+                      class="stack upload-form"
+                    >
+                      <input
+                        type="hidden"
+                        name="code"
+                        th:value="${selectedClass.courseCode}"
+                      /><input
+                        type="hidden"
+                        name="term"
+                        th:value="${selectedClass.term}"
+                      /><label for="file">Grade file (.csv)</label
+                      ><input
+                        id="file"
+                        type="file"
+                        name="file"
+                        accept=".csv,text/csv"
+                        required
+                        aria-describedby="file-help"
+                      />
+                      <p id="file-help" class="field-help">
+                        Up to 500 rows · 256 KB maximum<br />Header:
+                        <code>student_id,grade</code>
+                      </p>
+                      <button class="button primary full" type="submit">
+                        Preview grades <span aria-hidden="true">↗</span>
+                      </button>
+                    </form>
+                    <div class="upload-note">
+                      Grades: 1.00–3.00 in steps of 0.25, 4.00, 5.00, INC, or
+                      DRP. The entire file must be valid before any grades are
+                      saved.
+                    </div>
+                  </section>
+                </div>
+                <section class="preview-panel" th:if="${preview}">
+                  <div class="section-heading">
+                    <div>
+                      <span class="eyebrow accent"
+                        >REVIEW BEFORE PUBLISHING</span
+                      >
+                      <h2>
+                        <span th:text="${preview.rowsCount}"></span> grade rows
+                        ready for review
+                      </h2>
+                      <p class="muted">
+                        Publishing updates the class roster and student grade
+                        history.
+                      </p>
+                    </div>
+                  </div>
+                  <div class="table-scroll">
+                    <table>
+                      <caption class="sr-only">
+                        Grade upload preview
+                      </caption>
+                      <thead>
+                        <tr>
+                          <th scope="col">Student ID</th>
+                          <th scope="col">New grade</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr th:each="row : ${preview.rowsList}">
+                          <td th:text="${row.studentId}"></td>
+                          <td th:text="${row.value}"></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="preview-actions">
+                    <form th:action="@{/faculty/publish}" method="post">
+                      <button class="button primary" type="submit">
+                        Confirm &amp; publish grades
+                      </button>
+                    </form>
+                    <form th:action="@{/faculty/discard}" method="post">
+                      <button class="button secondary" type="submit">
+                        Discard preview
+                      </button>
+                    </form>
+                  </div>
+                </section></th:block
+              ></th:block
+            >
+          </th:block>
+          <footer class="page-footer">
+            <span>Northstar University</span
+            ><span
+              >Make room for what’s next.
+              <span class="footer-star" aria-hidden="true">✳</span></span
+            >
+          </footer>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,125 @@
+name: northstar
+x-app: &app
+  restart: unless-stopped
+  environment: &base-env
+    JWT_PUBLIC_KEY: file:/run/keys/public.pem
+  volumes:
+    - ./secrets/public.pem:/run/keys/public.pem:ro
+  networks: [campus]
+  stop_grace_period: 20s
+
+services:
+  identity-db:
+    image: postgres:17.12-alpine
+    environment:
+      POSTGRES_DB: identity
+      POSTGRES_USER: identity
+      POSTGRES_PASSWORD: ${IDENTITY_DB_PASSWORD:?Run scripts/setup.ps1 first}
+    ports: ["127.0.0.1:5541:5432"]
+    volumes: [identity-data:/var/lib/postgresql/data]
+    networks: [campus]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U identity -d identity"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  course-db:
+    image: postgres:17.12-alpine
+    environment:
+      POSTGRES_DB: course
+      POSTGRES_USER: course
+      POSTGRES_PASSWORD: ${COURSE_DB_PASSWORD:?Run scripts/setup.ps1 first}
+    ports: ["127.0.0.1:5542:5432"]
+    volumes: [course-data:/var/lib/postgresql/data]
+    networks: [campus]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U course -d course"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  grade-db:
+    image: postgres:17.12-alpine
+    environment:
+      POSTGRES_DB: grade
+      POSTGRES_USER: grade
+      POSTGRES_PASSWORD: ${GRADE_DB_PASSWORD:?Run scripts/setup.ps1 first}
+    ports: ["127.0.0.1:5543:5432"]
+    volumes: [grade-data:/var/lib/postgresql/data]
+    networks: [campus]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U grade -d grade"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  identity-service:
+    <<: *app
+    build:
+      context: .
+      args: {MODULE: identity-service}
+    environment:
+      <<: *base-env
+      DB_URL: jdbc:postgresql://identity-db:5432/identity
+      DB_USER: identity
+      DB_PASSWORD: ${IDENTITY_DB_PASSWORD}
+      JWT_PRIVATE_KEY: file:/run/keys/private.pem
+      DEMO_ENABLED: "true"
+      DEMO_PASSWORD: ${DEMO_PASSWORD:?Run scripts/setup.ps1 first}
+    volumes:
+      - ./secrets/public.pem:/run/keys/public.pem:ro
+      - ./secrets/private.pem:/run/keys/private.pem:ro
+    depends_on:
+      identity-db: {condition: service_healthy}
+  course-service:
+    <<: *app
+    build:
+      context: .
+      args: {MODULE: course-service}
+    environment:
+      <<: *base-env
+      DB_URL: jdbc:postgresql://course-db:5432/course
+      DB_USER: course
+      DB_PASSWORD: ${COURSE_DB_PASSWORD}
+    depends_on:
+      course-db: {condition: service_healthy}
+  grade-service:
+    <<: *app
+    build:
+      context: .
+      args: {MODULE: grade-service}
+    environment:
+      <<: *base-env
+      DB_URL: jdbc:postgresql://grade-db:5432/grade
+      DB_USER: grade
+      DB_PASSWORD: ${GRADE_DB_PASSWORD}
+    depends_on:
+      grade-db: {condition: service_healthy}
+  api-orchestrator:
+    <<: *app
+    build:
+      context: .
+      args: {MODULE: api-orchestrator}
+    environment:
+      <<: *base-env
+      IDENTITY_TARGET: ${IDENTITY_TARGET:-identity-service:9090}
+      COURSE_TARGET: ${COURSE_TARGET:-course-service:9090}
+      GRADE_TARGET: ${GRADE_TARGET:-grade-service:9090}
+  web-app:
+    <<: *app
+    build:
+      context: .
+      args: {MODULE: web-app}
+    environment:
+      <<: *base-env
+      ORCHESTRATOR_TARGET: ${ORCHESTRATOR_TARGET:-api-orchestrator:9090}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    ports: ["127.0.0.1:8080:8080"]
+
+networks:
+  campus:
+volumes:
+  identity-data:
+  course-data:
+  grade-data:
