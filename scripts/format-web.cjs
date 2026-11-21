@@ -13,7 +13,7 @@ function walk(directory) {
 async function main() {
   walk("frontend/src");
   for (const file of files) {
-    const original = fs.readFileSync(file, "utf8");
+    const original = fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n");
     const result = await prettier.format(original, { filepath: file });
     if (check && result !== original) {
       console.error("Formatting required: " + file);

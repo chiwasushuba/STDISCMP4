@@ -1,0 +1,153 @@
+<template id="faculty">
+  <div data-grade-feature role="region" aria-label="Teaching workspace"></div>
+  <p class="sr-only" aria-live="polite" aria-atomic="true"></p>
+</template>
+
+<template id="faculty-results">
+  <nav class="class-tabs" aria-label="Assigned classes"></nav>
+  <div class="empty-state" hidden>
+    <h2>No assigned classes yet.</h2>
+    <p>Your classes will appear when teaching assignments are available.</p>
+  </div>
+  <div class="faculty-grid">
+    <section class="table-panel">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow accent" data-course-code></span>
+          <h2></h2>
+          <p class="muted">
+            <span data-roster-count></span> students in the class roster
+          </p>
+        </div>
+        <span class="tag">YOUR CLASS</span>
+      </div>
+      <div
+        class="table-scroll"
+        role="region"
+        aria-label="Class grade roster"
+        tabindex="0"
+      >
+        <table>
+          <caption class="sr-only">
+            Class grade roster
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Student</th>
+              <th scope="col">Student ID</th>
+              <th scope="col">Grade</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="upload-panel">
+      <span class="eyebrow accent">FROM FILE TO FINAL</span>
+      <h2>Publish class grades</h2>
+      <p class="muted">
+        Download the roster, fill in the grades, then upload your CSV to review
+        it.
+      </p>
+      <a class="text-link" data-template-download
+        >Download roster CSV <span aria-hidden="true">↓</span></a
+      >
+      <form
+        action="/api/faculty/preview"
+        method="post"
+        enctype="multipart/form-data"
+        class="stack upload-form"
+      >
+        <input type="hidden" name="code" /><input type="hidden" name="term" />
+        <label for="grade-file">Grade file (.csv)</label>
+        <input
+          id="grade-file"
+          name="file"
+          type="file"
+          accept=".csv,text/csv"
+          required
+          aria-describedby="file-help"
+          data-max-bytes="262144"
+        />
+        <p id="file-help" class="field-help">
+          Up to 500 rows · 256 KB maximum<br />Header:
+          <code>student_id,grade</code>
+        </p>
+        <button class="button primary full" type="submit">
+          Preview grades <span aria-hidden="true">↗</span>
+        </button>
+      </form>
+      <div class="upload-note">
+        Grades: 1.00–3.00 in steps of 0.25, 4.00, 5.00, INC, or DRP. The entire
+        file must be valid before any grades are saved.
+      </div>
+    </section>
+  </div>
+</template>
+
+<template id="class-tab"
+  ><a><strong></strong><span></span></a
+></template>
+
+<template id="roster-row"
+  ><tr>
+    <td><strong></strong></td>
+    <td data-student-id></td>
+    <td><span></span></td></tr
+></template>
+
+<template id="preview-row"
+  ><tr>
+    <td data-student-id></td>
+    <td data-grade></td></tr
+></template>
+
+<template id="grade-preview">
+  <section class="preview-panel">
+    <div class="section-heading">
+      <div>
+        <h2 tabindex="-1"><span data-row-count></span> ready for review</h2>
+        <p class="muted">
+          Publishing updates the class roster and student grade history.
+        </p>
+      </div>
+    </div>
+    <div
+      class="table-scroll"
+      role="region"
+      aria-label="Grade upload preview"
+      tabindex="0"
+    >
+      <table>
+        <caption class="sr-only">
+          Grade upload preview
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Student ID</th>
+            <th scope="col">New grade</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="preview-actions">
+      <form action="/api/faculty/publish" method="post">
+        <input type="hidden" name="previewId" /><button
+          class="button primary"
+          type="submit"
+        >
+          Confirm &amp; publish grades
+        </button>
+      </form>
+      <form action="/api/faculty/discard" method="post">
+        <input type="hidden" name="previewId" /><button
+          class="button secondary"
+          type="submit"
+        >
+          Discard preview
+        </button>
+      </form>
+    </div>
+  </section>
+</template>

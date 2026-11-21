@@ -1,0 +1,53 @@
+<template id="grades">
+  <div data-grade-feature role="region" aria-label="Grade history"></div>
+  <p class="sr-only" aria-live="polite" aria-atomic="true"></p>
+</template>
+
+<template id="grade-results">
+  <form class="filter-bar grade-filter" action="/grades" method="get">
+    <label for="term">Academic semester</label>
+    <select id="term" name="term">
+      <option value="">All semesters</option>
+    </select>
+    <button class="button secondary" type="submit">Show grades</button>
+  </form>
+  <div class="table-panel">
+    <div
+      class="table-scroll"
+      role="region"
+      aria-label="Published grades"
+      tabindex="0"
+    >
+      <table>
+        <caption class="sr-only">
+          Published grades
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Course</th>
+            <th scope="col">Semester</th>
+            <th scope="col">Units</th>
+            <th scope="col">Grade</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="empty-state" hidden>
+      <h2>No published grades yet.</h2>
+      <p>Grades appear here after your faculty publishes them.</p>
+    </div>
+  </div>
+  <p class="table-note">
+    Grading scale: 1.00 is the highest grade · INC = Incomplete · DRP = Dropped
+  </p>
+</template>
+
+<template id="grade-row">
+  <tr>
+    <td><strong></strong><span class="cell-sub"></span></td>
+    <td data-term></td>
+    <td data-units></td>
+    <td><span class="grade-pill"></span></td>
+  </tr>
+</template>

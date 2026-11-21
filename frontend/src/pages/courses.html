@@ -1,0 +1,38 @@
+<template id="courses">
+  <form class="filter-bar" action="/courses" method="get">
+    <div class="search-field">
+      <label class="sr-only" for="search">Search courses</label
+      ><span aria-hidden="true">⌕</span>
+      <input
+        id="search"
+        name="search"
+        type="search"
+        maxlength="100"
+        placeholder="Search by course name or code…"
+      />
+    </div>
+    <label class="sr-only" for="department">Department</label>
+    <select id="department" name="department">
+      <option value="">All departments</option>
+      <option>Computer Science</option>
+      <option>Mathematics</option>
+      <option>General Education</option>
+    </select>
+    <button class="button primary" type="submit">Find courses</button>
+  </form>
+  <div data-course-feature role="region" aria-label="Catalog results"></div>
+  <p class="sr-only" aria-live="polite" aria-atomic="true"></p>
+</template>
+
+<template id="course-results">
+  <div class="result-line">
+    <strong><span data-course-count></span> courses</strong
+    ><span>Current semester offerings</span>
+  </div>
+  <div class="course-grid"></div>
+  <div class="empty-state" hidden>
+    <h2>No courses found.</h2>
+    <p>Try another search or choose a different department.</p>
+    <a class="button secondary" href="/courses">Clear filters</a>
+  </div>
+</template>

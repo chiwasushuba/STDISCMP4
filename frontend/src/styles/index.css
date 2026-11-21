@@ -1,0 +1,12 @@
+@import "./base.css";
+@import "./forms.css";
+@import "./tables.css";
+@import "../components/feature-panel.css";
+@import "../components/workspace.css";
+@import "../components/course-grid.css";
+@import "../pages/dashboard.css";
+@import "../pages/courses.css";
+@import "../pages/enrollment.css";
+@import "../pages/grades.css";
+@import "../pages/faculty.css";
+@import "../pages/login.css";

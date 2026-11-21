@@ -1,0 +1,31 @@
+<template id="enrollment">
+  <div data-course-feature role="region" aria-label="Enrollment results"></div>
+  <p class="sr-only" aria-live="polite" aria-atomic="true"></p>
+</template>
+
+<template id="enrollment-results">
+  <div class="enrollment-strip">
+    <div>
+      <span class="eyebrow">YOUR SEMESTER PLAN</span>
+      <h2>
+        <span data-enrolled-count></span> courses.
+        <span data-unit-count></span> units. Your next chapter.
+      </h2>
+    </div>
+    <a class="button primary" href="/courses"
+      >Add a course <span aria-hidden="true">+</span></a
+    >
+  </div>
+  <div class="empty-state" hidden>
+    <span class="empty-icon" aria-hidden="true">▤</span>
+    <h2>Your semester is a blank canvas.</h2>
+    <p>
+      Choose your first course from the catalog. Your confirmed selections will
+      appear here.
+    </p>
+    <a class="button primary" href="/courses"
+      >Explore courses <span aria-hidden="true">↗</span></a
+    >
+  </div>
+  <div class="course-grid"></div>
+</template>

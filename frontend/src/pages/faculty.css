@@ -1,0 +1,148 @@
+.class-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 25px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+.class-tabs a {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 185px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 19px;
+}
+.class-tabs a.selected {
+  background: #eaf5ef;
+  border-color: #8dc2aa;
+}
+.class-tabs a strong {
+  font-size: 12px;
+}
+.class-tabs a span {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.faculty-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(275px, 1fr);
+  gap: 23px;
+  align-items: start;
+}
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 24px;
+  gap: 12px;
+}
+.panel-header h2 {
+  font-size: 18px;
+  margin: 7px 0;
+}
+.panel-header p {
+  font-size: 11px;
+}
+.upload-panel {
+  padding: 25px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  min-width: 0;
+}
+.upload-panel h2 {
+  margin: 9px 0 10px;
+  font-size: 20px;
+}
+.upload-panel p {
+  font-size: 12px;
+}
+.upload-panel > .text-link {
+  margin-top: 18px;
+}
+.upload-form {
+  margin-top: 24px;
+}
+.upload-form input[type="file"] {
+  font-size: 10px;
+  padding: 13px 9px;
+  margin-bottom: 7px;
+  background: #f8faf9;
+}
+.upload-form input::file-selector-button {
+  border: 1px solid #d1ddd6;
+  background: white;
+  border-radius: 4px;
+  padding: 6px;
+  color: var(--ink);
+  margin-right: 6px;
+  font: inherit;
+}
+.field-help {
+  font-size: 10px !important;
+  color: var(--muted);
+  margin-bottom: 15px;
+}
+.upload-note {
+  font-size: 10px;
+  line-height: 1.8;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  margin-top: 21px;
+  padding-top: 18px;
+}
+.preview-panel {
+  margin-top: 25px;
+  border: 1px solid #96c7b3;
+  background: white;
+  border-radius: 10px;
+  padding: 25px;
+}
+.preview-panel .muted {
+  font-size: 12px;
+  margin-top: 5px;
+}
+.preview-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.preview-panel table {
+  max-width: 600px;
+}
+@media (max-width: 1200px) {
+  .faculty-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .panel-header {
+    padding: 22px;
+  }
+  .panel-header .tag {
+    display: none;
+  }
+  .faculty-grid {
+    gap: 18px;
+  }
+  .upload-panel {
+    padding: 23px;
+  }
+  .preview-panel {
+    padding: 20px;
+  }
+  .preview-actions {
+    flex-direction: column;
+  }
+  .preview-actions .button {
+    width: 100%;
+  }
+  .class-tabs a {
+    min-width: 180px;
+  }
+}

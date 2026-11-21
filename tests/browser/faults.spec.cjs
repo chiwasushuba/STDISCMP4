@@ -9,7 +9,7 @@ function docker(action, node) {
 }
 
 for (const node of ["grade-service", "course-service", "identity-service", "grade-db"]) {
-  test(`${node} failure preserves unrelated features and recovers`, async ({ page }) => {
+  test(`${node} failure preserves unrelated features and recovers`, async ({ page, baseURL }) => {
     test.setTimeout(90000);
     await login(page);
     try {
@@ -21,10 +21,10 @@ for (const node of ["grade-service", "course-service", "identity-service", "grad
         await expect(page.locator(".unavailable")).toHaveCount(0);
         await expect(page.locator(".course-card").first()).toBeVisible();
         await expect(page.locator(".record-summary")).toBeVisible();
-        const other = await page.context().browser().newContext();
+        const other = await page.context().browser().newContext({ baseURL });
         try {
           const fresh = await other.newPage();
-          await fresh.goto("http://localhost:8080/login");
+          await fresh.goto("/login");
           await fresh.getByLabel("University email").fill("student@animoroll.edu");
           await fresh.getByLabel("Password", { exact: true }).fill("deliberately-incorrect-password");
           await fresh.getByRole("button", { name: "Sign in", exact: true }).click();
@@ -59,7 +59,9 @@ for (const node of ["grade-service", "course-service", "identity-service", "grad
         await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
         const panel = node === "course-service" ? "Course overview" : "Academic record";
         await expect(page.getByRole("region", { name: panel })).toBeFocused();
-        await expect(page.locator('[aria-live="polite"]').filter({ hasText: `${panel} updated.` })).toHaveCount(1);
+        // The retry has settled. Check its announcement before starting another attempt.
+        const announced = page.locator('[aria-live="polite"]').filter({ hasText: `${panel} updated.` });
+        expect(await announced.count()).toBe(1);
       }
       await expect(page.locator(".unavailable")).toHaveCount(0);
       await expect(page.locator(".course-card").first()).toBeVisible();

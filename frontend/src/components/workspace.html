@@ -1,0 +1,66 @@
+<template id="workspace">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/">
+        <span class="brand-mark" aria-hidden="true">✳</span>
+        <span>AnimoRoll<span class="brand-sub">UNIVERSITY PORTAL</span></span>
+      </a>
+      <div class="workspace-label"></div>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="/"
+          ><span class="nav-icon" aria-hidden="true">◫</span>Overview</a
+        >
+        <a href="/courses"
+          ><span class="nav-icon" aria-hidden="true">▤</span>Course catalog</a
+        >
+        <a href="/enrollment"
+          ><span class="nav-icon" aria-hidden="true">▦</span>My enrollment</a
+        >
+        <a href="/grades"
+          ><span class="nav-icon" aria-hidden="true">◷</span>Grade history</a
+        >
+        <a href="/faculty"
+          ><span class="nav-icon" aria-hidden="true">▤</span>Classes &amp;
+          grades</a
+        >
+      </nav>
+      <div class="sidebar-note">
+        <span class="small-star" aria-hidden="true">✳</span
+        ><strong>Your next chapter<br />starts here.</strong>
+        <p>Make room for what’s next.</p>
+      </div>
+      <div class="sidebar-bottom">
+        <div class="profile">
+          <span class="avatar" aria-hidden="true"></span>
+          <div><strong></strong><span></span></div>
+        </div>
+        <form action="/api/signout" method="post">
+          <button class="signout" type="submit">
+            Sign out <span aria-hidden="true">↗</span>
+          </button>
+        </form>
+      </div>
+    </aside>
+    <div class="main-column">
+      <header class="topbar">
+        <div>
+          <span class="breadcrumb">Workspace</span
+          ><span class="breadcrumb-slash" aria-hidden="true">/</span
+          ><strong data-breadcrumb></strong>
+        </div>
+        <span class="term-chip"
+          ><span class="status-dot" aria-hidden="true"></span
+          ><span data-current-term></span
+        ></span>
+      </header>
+      <main id="main" class="main-content" tabindex="-1">
+        <div class="page-heading"><h1 tabindex="-1"></h1></div>
+        <div class="notice success" role="status" hidden></div>
+        <div class="notice error" role="alert" hidden></div>
+        <div data-workspace-view></div>
+        <footer class="page-footer"><span>AnimoRoll</span></footer>
+      </main>
+    </div>
+  </div>
+</template>

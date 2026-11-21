@@ -1,0 +1,67 @@
+<template id="dashboard">
+  <section class="welcome-banner">
+    <div>
+      <span class="eyebrow">A NEW SEMESTER. NEW POSSIBILITIES.</span>
+      <h2>Welcome back, <span data-first-name></span>.</h2>
+      <p>Your next great idea might start with your next class.</p>
+      <a class="button light" href="/courses"
+        >Explore courses <span aria-hidden="true">↗</span></a
+      >
+    </div>
+    <div class="banner-art" aria-hidden="true">
+      <div class="art-ring"></div>
+      <span>✳</span>
+    </div>
+  </section>
+  <section class="stats-grid" aria-label="Semester summary">
+    <div class="stat">
+      <span>Enrolled courses</span><strong data-enrolled-count>—</strong
+      ><small>Your confirmed selections</small>
+    </div>
+    <div class="stat">
+      <span>Academic units</span><strong data-unit-count>—</strong
+      ><small>For the current semester</small>
+    </div>
+    <div class="stat">
+      <span>Open courses</span><strong data-open-count>—</strong
+      ><small>Ready for your next step</small>
+    </div>
+  </section>
+  <section class="section-block">
+    <div class="section-heading">
+      <div>
+        <span class="eyebrow muted">BUILD YOUR SEMESTER</span>
+        <h2>Find something worth learning.</h2>
+      </div>
+      <a class="text-link" href="/courses"
+        >View catalog <span aria-hidden="true">↗</span></a
+      >
+    </div>
+    <div data-course-feature role="region" aria-label="Course overview"></div>
+    <p class="sr-only" aria-live="polite" aria-atomic="true"></p>
+  </section>
+  <section class="section-block">
+    <div class="section-heading">
+      <div>
+        <span class="eyebrow muted">KEEP MOVING FORWARD</span>
+        <h2>Your academic record</h2>
+      </div>
+      <a class="text-link" href="/grades"
+        >View grades <span aria-hidden="true">↗</span></a
+      >
+    </div>
+    <div data-grade-feature role="region" aria-label="Academic record"></div>
+    <p class="sr-only" aria-live="polite" aria-atomic="true"></p>
+  </section>
+</template>
+
+<template id="record-summary">
+  <div class="record-summary">
+    <span class="record-icon" aria-hidden="true">↗</span>
+    <div>
+      <strong><span data-grade-count></span> published grade records</strong>
+      <p class="muted">Your hard work, semester by semester.</p>
+    </div>
+    <a class="button secondary" href="/grades">Review progress</a>
+  </div>
+</template>

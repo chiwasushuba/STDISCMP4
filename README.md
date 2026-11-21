@@ -129,7 +129,11 @@ Download the selected class roster to get valid student IDs. Blank grades in the
 ```text
 contracts/          Versioned protobuf APIs and generated Java stubs
 service-common/     JWT validation, RPC security, server lifecycle, error mapping
-frontend/           Vite project with plain HTML, CSS, and JavaScript views
+frontend/           Vanilla Vite frontend
+  src/pages/        Login, dashboard, catalog, enrollment, grades, and faculty pages
+  src/components/   Workspace shell, course grid, and loading and error states
+  src/lib/          Shared API, DOM, and form helpers
+  src/styles/       Shared styles and CSS imports for pages and components
 web-app/            Spring MVC browser endpoints, sessions, static asset hosting
 api-orchestrator/   gRPC controllers forwarding requests to one owning service
 identity-service/   Accounts, password verification, JWT signing, refresh sessions

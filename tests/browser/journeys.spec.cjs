@@ -130,6 +130,7 @@ test("faculty workspace fits mobile and essential pages pass automated accessibi
   };
   await page.goto("/login");
   await waitForReady(page);
+  await expect(page.getByLabel("University email")).toHaveAttribute("placeholder", "you@animoroll.edu");
   await inspect();
   await login(page, "faculty");
   await inspect();

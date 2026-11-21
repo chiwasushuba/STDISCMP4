@@ -1,0 +1,37 @@
+<template id="course-card">
+  <article class="course-card">
+    <div class="course-card-top">
+      <span class="course-code"></span><span class="tag"></span>
+    </div>
+    <h3></h3>
+    <p class="course-department">
+      <span data-department></span><span aria-hidden="true"> · </span
+      ><span data-units></span> units
+    </p>
+    <div class="course-meta">
+      <div>
+        <span class="meta-icon" aria-hidden="true">◷</span
+        ><span data-schedule></span>
+      </div>
+      <div>
+        <span class="meta-icon" aria-hidden="true">⌖</span
+        ><span data-room></span>
+      </div>
+      <div>
+        <span class="meta-icon" aria-hidden="true">○</span
+        ><span data-faculty></span>
+      </div>
+    </div>
+    <div class="course-bottom">
+      <span data-seats-left><strong></strong> seats left</span>
+      <span class="confirmed" hidden>✓ Enrollment confirmed</span>
+      <span class="muted" data-closed hidden>Enrollment closed</span>
+      <form action="/api/enroll" method="post" data-enroll-form hidden>
+        <input type="hidden" name="courseId" />
+        <button type="submit" class="enroll-button">
+          Enroll <span aria-hidden="true">+</span>
+        </button>
+      </form>
+    </div>
+  </article>
+</template>

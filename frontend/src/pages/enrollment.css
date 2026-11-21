@@ -1,0 +1,30 @@
+.enrollment-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 28px;
+  border: 1px solid #d7e9e0;
+  background: #edf6f1;
+  border-radius: 10px;
+  margin-bottom: 26px;
+}
+.enrollment-strip .eyebrow {
+  color: var(--accent);
+  font-size: 9px;
+}
+.enrollment-strip h2 {
+  font-size: 19px;
+  margin-top: 7px;
+}
+@media (max-width: 560px) {
+  .enrollment-strip {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 23px;
+  }
+  .enrollment-strip h2 {
+    font-size: 19px;
+    max-width: 280px;
+  }
+}

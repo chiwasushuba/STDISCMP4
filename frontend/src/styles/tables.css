@@ -1,0 +1,60 @@
+.table-panel {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: white;
+  min-width: 0;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  white-space: normal;
+  font-size: 12px;
+}
+th {
+  background: #f9fafb;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 14px 22px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 20px 22px;
+  border-bottom: 1px solid #edf0f3;
+  white-space: nowrap;
+}
+td:first-child {
+  white-space: normal;
+  min-width: 180px;
+}
+td > strong {
+  font-size: 11px;
+  font-weight: 650;
+}
+tr:last-child td {
+  border-bottom: 0;
+}
+.cell-sub {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.grade-pill {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 47px;
+  background: #edf6f1;
+  color: #167360;
+  font-weight: 650;
+  border-radius: 5px;
+  font-size: 11px;
+  padding: 4px 8px;
+  font-variant-numeric: tabular-nums;
+}

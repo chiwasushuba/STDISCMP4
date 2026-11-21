@@ -1,0 +1,246 @@
+.welcome-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background: var(--navy);
+  border-radius: var(--radius);
+  min-height: 228px;
+  padding: 33px 36px;
+  color: #fff;
+}
+.welcome-banner .eyebrow {
+  color: #a6d3c3;
+  font-size: 9px;
+}
+.welcome-banner h2 {
+  font-size: 31px;
+  font-weight: 550;
+  letter-spacing: -0.8px;
+  margin: 12px 0 8px;
+  line-height: 1.25;
+}
+.welcome-banner p {
+  color: #b6c9cf;
+  font-size: 12px;
+  margin-bottom: 22px;
+}
+.welcome-banner .button {
+  min-height: 37px;
+  font-size: 11px;
+  padding: 9px 14px;
+}
+.banner-art {
+  width: 225px;
+  height: 200px;
+  flex-shrink: 0;
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin: -35px -6px -35px 15px;
+}
+.banner-art > span {
+  font-size: 172px;
+  color: #b6dbc6;
+  position: relative;
+  line-height: 1;
+  transform: rotate(12deg);
+}
+.art-ring {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border: 1px solid #7aa49944;
+  border-radius: 50%;
+  transform: rotate(-25deg);
+}
+.art-ring:before,
+.art-ring:after {
+  content: "";
+  position: absolute;
+  inset: 23px;
+  border: 1px solid #7aa49944;
+  border-radius: 50%;
+}
+.art-ring:after {
+  inset: 48px;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 20px 0 35px;
+}
+.stat {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 18px 22px;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+.stat > span {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 550;
+}
+.stat > strong {
+  display: block;
+  font-size: 34px;
+  font-weight: 550;
+  letter-spacing: -1px;
+  margin: 4px 0 0;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+.stat > small {
+  font-size: 10px;
+  color: #5b6c79;
+}
+.stat:after {
+  content: "↗";
+  position: absolute;
+  right: 20px;
+  top: 22px;
+  color: #88a69c;
+  font-size: 16px;
+}
+.section-block {
+  margin-bottom: 32px;
+}
+.record-summary {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: white;
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  gap: 17px;
+}
+.record-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: #eaf5f0;
+  color: var(--accent);
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.record-summary strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+.record-summary p {
+  font-size: 11px;
+  margin-top: 3px;
+}
+.record-summary .button {
+  margin-left: auto;
+  font-size: 11px;
+}
+@media (min-width: 1600px) {
+  .welcome-banner {
+    min-height: 255px;
+  }
+}
+@media (max-width: 1200px) {
+  .banner-art {
+    width: 170px;
+  }
+  .banner-art > span {
+    font-size: 140px;
+  }
+  .art-ring {
+    width: 185px;
+    height: 185px;
+  }
+  .welcome-banner {
+    padding: 29px;
+  }
+}
+@media (max-width: 800px) {
+  .welcome-banner h2 {
+    font-size: 28px;
+  }
+  .banner-art {
+    width: 160px;
+  }
+}
+@media (max-width: 560px) {
+  .welcome-banner {
+    padding: 26px 23px;
+    min-height: 240px;
+    align-items: flex-start;
+  }
+  .welcome-banner > div:first-child {
+    position: relative;
+    z-index: 1;
+  }
+  .welcome-banner h2 {
+    font-size: 27px;
+    max-width: 240px;
+  }
+  .welcome-banner p {
+    max-width: 220px;
+    font-size: 11px;
+  }
+  .welcome-banner .eyebrow {
+    font-size: 8px;
+    letter-spacing: 1.1px;
+  }
+  .banner-art {
+    position: absolute;
+    right: -55px;
+    bottom: -20px;
+    opacity: 0.22;
+    width: 200px;
+    height: 200px;
+    margin: 0;
+  }
+  .banner-art > span {
+    font-size: 170px;
+  }
+  .stats-grid {
+    gap: 8px;
+    margin: 14px 0 29px;
+  }
+  .stat {
+    padding: 14px 11px;
+  }
+  .stat > span {
+    font-size: 9px;
+    line-height: 1.5;
+    min-height: 27px;
+  }
+  .stat > strong {
+    font-size: 29px;
+    margin: 4px 0;
+  }
+  .stat > small {
+    font-size: 8px;
+    display: block;
+    line-height: 1.5;
+  }
+  .stat:after {
+    display: none;
+  }
+  .record-summary {
+    flex-wrap: wrap;
+    padding: 20px;
+    gap: 13px;
+  }
+  .record-summary strong {
+    font-size: 12px;
+  }
+  .record-summary p {
+    font-size: 10px;
+  }
+  .record-summary .button {
+    width: 100%;
+    margin-top: 5px;
+  }
+}

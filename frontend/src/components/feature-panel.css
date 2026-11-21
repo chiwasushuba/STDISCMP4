@@ -1,0 +1,88 @@
+.notice {
+  padding: 13px 17px;
+  border-radius: 8px;
+  margin: 0 0 20px;
+  font-size: 12px;
+  border: 1px solid;
+  overflow-wrap: anywhere;
+}
+.notice.error {
+  background: #fdf0ee;
+  color: #9e3833;
+  border-color: #f4d5cf;
+}
+.notice.success {
+  background: #e8f6ef;
+  color: #176f4e;
+  border-color: #c8e8d6;
+}
+.notice.warning {
+  background: #fff6de;
+  color: #805c19;
+  border-color: #ecdbb6;
+}
+.unavailable {
+  background: #fffbf2;
+  border: 1px solid #ebdfbe;
+  border-radius: 9px;
+  padding: 25px;
+  margin: 0 0 24px;
+}
+.unavailable strong {
+  font-size: 15px;
+  color: #6e5420;
+}
+.unavailable p {
+  color: #816b3d;
+  font-size: 12px;
+  margin: 6px 0 12px;
+}
+.unavailable a {
+  font-size: 12px;
+  text-decoration: underline;
+  color: #77551c;
+}
+.empty-state {
+  text-align: center;
+  padding: 60px 25px;
+  background: white;
+  border: 1px dashed #d1ddd8;
+  border-radius: 10px;
+}
+.empty-state h2 {
+  margin-bottom: 10px;
+  font-size: 22px;
+}
+.empty-state p {
+  color: var(--muted);
+  font-size: 12px;
+  max-width: 400px;
+  margin: 0 auto 22px;
+}
+.empty-icon {
+  display: block;
+  font-size: 40px;
+  color: #86b2a3;
+  margin-bottom: 12px;
+}
+@media (max-width: 560px) {
+  .empty-state {
+    padding: 45px 22px;
+  }
+  .empty-state h2 {
+    font-size: 21px;
+  }
+}
+
+.feature-loading {
+  margin: 16px 0 24px;
+  color: var(--muted);
+}
+
+.unavailable button {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-decoration: underline;
+  color: #77551c;
+}
