@@ -21,13 +21,13 @@ public class CourseService {
     Rpc.check(
         query.getSearch().length() <= 100 && query.getDepartment().length() <= 80,
         "Search is too long.");
-    String search = "%" + query.getSearch().trim().toLowerCase(java.util.Locale.ROOT) + "%";
+    String search = query.getSearch().strip();
     List<Course> courses =
         jdbc.query(
             """
                 select c.*, c.capacity-(select count(*) from enrollment e where e.course_id=c.id) as seats,
                 exists(select 1 from enrollment e where e.course_id=c.id and e.student_id=?) as enrolled
-                from course c where (lower(c.code) like ? or lower(c.title) like ?)
+                from course c where (strpos(lower(c.code), lower(?)) > 0 or strpos(lower(c.title), lower(?)) > 0)
                 and (?='' or c.department=?) order by c.code
                 """,
             (rs, index) ->

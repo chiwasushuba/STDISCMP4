@@ -1,7 +1,14 @@
 .git
 .tools
 .evidence
+deliverables
+test-results
+playwright-report
 **/target
+**/node_modules
+frontend/dist
+frontend/.env*
+frontend/.npmrc
 .env
 secrets
 data

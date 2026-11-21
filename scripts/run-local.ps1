@@ -15,7 +15,11 @@ try {
         if ($_ -match '^([A-Z_]+)=(.+)$') { Set-Item -Path "Env:$($Matches[1])" -Value $Matches[2] }
     }
     if (-not $SkipBuild) {
-        & ./mvnw.cmd -B -q -DskipTests package
+        & npm.cmd --prefix frontend ci
+        if ($LASTEXITCODE -ne 0) { throw 'Frontend dependency installation failed.' }
+        & npm.cmd --prefix frontend run build
+        if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed.' }
+        & ./mvnw.cmd -B -q -DskipTests clean package
         if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
     }
     & docker compose up -d --wait identity-db course-db grade-db
@@ -52,5 +56,5 @@ try {
         $processes += @{ Name=$node.Name; Pid=$process.Id; Started=$process.StartTime.ToUniversalTime().ToString('o') }
     }
     $processes | ConvertTo-Json | Set-Content -LiteralPath $pidFile
-    Write-Host 'Starting Northstar at http://localhost:8080. Logs: .tools/logs/'
+    Write-Host 'Starting AnimoRoll at http://localhost:8080. Logs: .tools/logs/'
 } finally { Pop-Location }

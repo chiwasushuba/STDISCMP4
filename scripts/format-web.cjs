@@ -2,7 +2,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const prettier = require("prettier");
 const check = process.argv.includes("--check");
-const files = [];
+const files = ["frontend/index.html", "frontend/vite.config.js"];
 function walk(directory) {
   for (const item of fs.readdirSync(directory, { withFileTypes: true })) {
     const file = path.join(directory, item.name);
@@ -11,15 +11,10 @@ function walk(directory) {
   }
 }
 async function main() {
-  walk("web-app/src/main/resources");
+  walk("frontend/src");
   for (const file of files) {
     const original = fs.readFileSync(file, "utf8");
-    // HTML's namespace parser mistakes th:block for a foreign-content namespace.
-    const input = original.replaceAll("th:block", "thymeleaf-block");
-    const result = (await prettier.format(input, { filepath: file })).replaceAll(
-      "thymeleaf-block",
-      "th:block",
-    );
+    const result = await prettier.format(original, { filepath: file });
     if (check && result !== original) {
       console.error("Formatting required: " + file);
       process.exitCode = 1;

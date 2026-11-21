@@ -2,13 +2,13 @@
 
 ## Decision
 
-Option 1 was approved: three Spring Boot domain services, a thin gRPC orchestrator, and a separate Spring MVC/Thymeleaf view application. Course browsing and enrollment share one domain and database so checking capacity and allocating a seat are one local transaction.
+The portal uses a standalone web node, a thin gRPC orchestrator, and three Spring Boot domain services. Course browsing and enrollment share one domain and database so checking capacity and allocating a seat are one local transaction.
 
-Alternatives considered: four services separating catalog and enrollment, which introduces cross-service consistency work; or direct web-to-feature gRPC calls with selective orchestration, which removes the orchestrator from ordinary request paths but puts more routing in the view node. Neither was selected.
+AnimoRoll renders its views in the browser using plain HTML, CSS, and JavaScript built by Vite. The Spring MVC web node serves that bundle alongside same-origin browser endpoints under `/api`. This keeps one browser-facing node and one HTTP session boundary. Using Vite for assets while keeping server-rendered HTML would leave view logic in Spring. Hosting the Vite bundle independently would add cross-origin session configuration.
 
 ```mermaid
 flowchart LR
-  Browser -->|HTTP locally / HTTPS with TLS deployment| Web[Web view node]
+  Browser -->|HTTP locally / HTTPS with TLS deployment| Web[Vite bundle and Spring MVC web node]
   Web -->|gRPC + JWT| API[API orchestrator]
   API -->|gRPC| Identity[Identity service]
   API -->|gRPC + JWT| Courses[Course service]
@@ -18,7 +18,7 @@ flowchart LR
   Grades --> GDB[(Grade PostgreSQL)]
 ```
 
-Browsers do not call internal gRPC servers. The MVC application accepts browser forms and renders views; its gRPC client calls the orchestrator. Domain controllers handle transport; domain services own rules and transactions. Shared protobuf contracts are libraries, not another network hop. The orchestrator has no database and does not own business rules.
+The browser sends form data and reads JSON over HTTP. The MVC controller handles sessions and CSV preview, then calls the orchestrator through its gRPC client. Domain controllers handle transport, and domain services own rules and transactions. The gRPC contracts are shared protobuf libraries.
 
 ## Ownership and seeded records
 
@@ -30,7 +30,7 @@ The included catalog and grade rosters are synthetic demonstration fixtures. His
 
 The identity service verifies BCrypt password hashes and signs RS256 JWTs. Every backend node independently validates the signature, issuer, audience, and expiration, and business services enforce roles and object ownership. The orchestrator forwards the original token, rather than substituting a user ID supplied by a caller.
 
-JWTs carry `sub`, `name`, `role`, and `sid`. Access lifetime is 15 minutes. Refresh tokens are random, stored as SHA-256 hashes in PostgreSQL, rotated under a row lock, and valid for eight hours from login. The MVC node retains the token pair in a server-side HTTP session and attempts refresh after 14 minutes. The browser receives an HttpOnly, SameSite=Lax session cookie; tokens are not stored in browser local storage. Login changes the session ID. State-changing forms retain Spring Security CSRF checks.
+JWTs carry `sub`, `name`, `role`, and `sid`. Access lifetime is 15 minutes. Refresh tokens are random, stored as SHA-256 hashes in PostgreSQL, rotated under a row lock, and valid for eight hours from login. The MVC node retains the token pair in a server-side HTTP session and attempts refresh after 14 minutes. The browser receives an HttpOnly, SameSite=Lax session cookie. A successful login creates a fresh browser session and clears any old preview. The frontend reads the CSRF token from `/api/session` and sends it with state-changing requests. Spring Security validates that token.
 
 Logout revokes the persistent refresh session and clears the browser session. Already issued access JWTs remain verifiable until expiry; immediate global revocation would require an online check and introduce an identity dependency for every call. If identity is unavailable during logout, the browser session still clears and the login page explicitly reports pending revocation. Existing signed-in sessions keep accessing other services until refresh is needed. There is no cross-node in-memory identity lookup.
 
@@ -47,7 +47,7 @@ The view node uses local HTTP session storage and is not replicated. Multiple vi
 | Web node | Browser portal unavailable | Internal services remain running |
 | One Docker host containing everything | Entire deployment unavailable | Requires separate hosts to isolate machine failures |
 
-The web app loads course and grade panels independently. An unavailable panel has a retry link; missing data is not represented as a successful empty result or a zero count. The shell and unaffected panels continue rendering.
+The frontend loads course and grade panels independently. An unavailable panel offers a retry for its own request. The shell and unaffected panels continue rendering, and counts appear when their underlying data has loaded.
 
 Web-to-orchestrator calls have a three-second deadline, and orchestrator-to-domain calls have a two-second deadline. Cancellation/deadlines propagate through the Java gRPC context. There are no automatic write retries. Enrollment is idempotent for the student/course pair; repeated grade publishing sets the same values. A client timeout can leave a write's outcome unknown: inspect the enrollment receipt list or refreshed roster before retrying. PostgreSQL connection and socket timeouts bound persistence failures separately.
 
@@ -55,7 +55,7 @@ Web-to-orchestrator calls have a three-second deadline, and orchestrator-to-doma
 
 Enrollment locks the owning course row with `FOR UPDATE`, checks capacity, and inserts within one transaction. Every replica uses the same lock. A composite primary key prevents duplicate student/course enrollment; duplicate requests return the existing-enrollment outcome. Closed/full/missing offerings are rejected by the backend.
 
-Grade uploads check assignment ownership and every value. They update existing roster entries only, inside one transaction. A duplicate, unknown student, or invalid value throws and rolls back earlier rows. Each upload is capped at 500 records. Concurrent valid uploads use ordinary PostgreSQL row locking; the last committed value for a student is authoritative. No audit history, draft-grade workflow, or administrative override is claimed.
+Grade uploads check assignment ownership and every value. The confirm and discard actions refer to the exact preview shown in the browser. Each upload is capped at 500 records and updates existing roster entries in one transaction. An unknown student rolls back earlier rows. The service updates students in a consistent order so overlapping uploads acquire locks in the same order. The last committed value for a student is authoritative.
 
 Each service uses its own PostgreSQL database, credentials, Hikari connection pool (maximum eight connections), and Flyway migrations. Database volumes preserve state across container recreation. There is no cross-service SQL or distributed transaction. This version uses a single current offering per course code; multiyear catalog administration and schedule/prerequisite rules are outside scope.
 

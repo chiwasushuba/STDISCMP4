@@ -1,232 +1,206 @@
 package edu.northstar.web;
 
-import edu.northstar.contracts.*;
-import io.grpc.Status;
+import edu.northstar.contracts.GradeUpload;
 import io.grpc.StatusRuntimeException;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import org.springframework.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.server.ResponseStatusException;
 
-@Controller
+@RestController
+@RequestMapping("/api")
 public class PortalController {
   public static final String TERM = "2026–2027 · Semester 1";
+  private static final String PENDING_GRADES = "pendingGrades";
   private final PortalApi api;
+  private final HttpSessionSecurityContextRepository sessions =
+      new HttpSessionSecurityContextRepository();
+
+  private record PendingGrades(String id, GradeUpload upload) {}
 
   public PortalController(PortalApi api) {
     this.api = api;
   }
 
-  private PortalSession user() {
-    return (PortalSession) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-  }
-
-  @GetMapping("/login")
-  String loginPage() {
-    return "login";
+  @GetMapping("/session")
+  ResponseEntity<PortalData.Session> session(
+      @AuthenticationPrincipal PortalSession user, CsrfToken csrf) {
+    return ResponseEntity.ok()
+        .cacheControl(CacheControl.noStore())
+        .body(
+            new PortalData.Session(
+                user == null ? null : PortalData.User.from(user),
+                TERM,
+                new PortalData.Csrf(csrf.getHeaderName(), csrf.getToken())));
   }
 
   @PostMapping("/login")
-  String login(
+  PortalData.User login(
       @RequestParam String email,
       @RequestParam String password,
       HttpServletRequest request,
-      HttpServletResponse response,
-      Model model) {
-    try {
-      PortalSession session = new PortalSession(api.login(email, password));
-      request.getSession();
-      request.changeSessionId();
-      var context = SecurityContextHolder.createEmptyContext();
-      context.setAuthentication(
-          new UsernamePasswordAuthenticationToken(
-              session, null, List.of(new SimpleGrantedAuthority("ROLE_" + session.getRole()))));
-      SecurityContextHolder.setContext(context);
-      new HttpSessionSecurityContextRepository().saveContext(context, request, response);
-      return "redirect:/";
-    } catch (StatusRuntimeException exception) {
-      model.addAttribute("error", message(exception));
-      model.addAttribute("email", email);
-      return "login";
-    }
+      HttpServletResponse response) {
+    var user = new PortalSession(api.login(email, password));
+    HttpSession previous = request.getSession(false);
+    if (previous != null) previous.invalidate();
+    var context = SecurityContextHolder.createEmptyContext();
+    context.setAuthentication(
+        new UsernamePasswordAuthenticationToken(
+            user, null, List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()))));
+    SecurityContextHolder.setContext(context);
+    sessions.saveContext(context, request, response);
+    return PortalData.User.from(user);
   }
 
   @PostMapping("/signout")
-  String signout(HttpServletRequest request) {
-    boolean revoked = true;
+  PortalData.Signout signout(
+      @AuthenticationPrincipal PortalSession user,
+      Authentication authentication,
+      HttpServletRequest request,
+      HttpServletResponse response) {
+    boolean revocationPending = false;
     try {
-      api.logout(user());
+      api.logout(user);
     } catch (StatusRuntimeException exception) {
-      revoked = false;
+      revocationPending = true;
+    } finally {
+      new SecurityContextLogoutHandler().logout(request, response, authentication);
     }
-    request.getSession().invalidate();
-    SecurityContextHolder.clearContext();
-    return "redirect:/login?signedout" + (revoked ? "" : "&revocationPending");
-  }
-
-  @GetMapping("/")
-  String dashboard(Model model) {
-    if (user().getRole().equals("FACULTY")) return "redirect:/faculty";
-    base(model, "dashboard", "Your semester, at a glance", "A little planning. A great semester.");
-    loadCourses(model, "", "", false);
-    loadGrades(model, "");
-    return "portal";
+    return new PortalData.Signout(revocationPending);
   }
 
   @GetMapping("/courses")
-  String courses(
+  List<PortalData.CourseItem> courses(
+      @AuthenticationPrincipal PortalSession user,
       @RequestParam(defaultValue = "") String search,
-      @RequestParam(defaultValue = "") String department,
-      Model model) {
-    if (!user().getRole().equals("STUDENT")) return "redirect:/faculty";
-    base(
-        model,
-        "courses",
-        "Find your next course",
-        "Explore the catalog and build a semester that works for you.");
-    model.addAttribute("search", search);
-    model.addAttribute("department", department);
-    loadCourses(model, search, department, false);
-    return "portal";
+      @RequestParam(defaultValue = "") String department) {
+    return courseItems(user, search, department, false);
   }
 
   @GetMapping("/enrollment")
-  String enrollment(Model model) {
-    if (!user().getRole().equals("STUDENT")) return "redirect:/faculty";
-    base(model, "enrollment", "My enrollment", "Your confirmed courses, all in one place.");
-    loadCourses(model, "", "", true);
-    return "portal";
+  List<PortalData.CourseItem> enrollment(@AuthenticationPrincipal PortalSession user) {
+    return courseItems(user, "", "", true);
   }
 
   @PostMapping("/enroll")
-  String enroll(@RequestParam String courseId, RedirectAttributes flash) {
-    try {
-      flash.addFlashAttribute("success", api.enroll(user(), courseId).getMessage());
-    } catch (StatusRuntimeException exception) {
-      flash.addFlashAttribute("error", message(exception));
-    }
-    return "redirect:/enrollment";
+  PortalData.Message enroll(
+      @AuthenticationPrincipal PortalSession user, @RequestParam String courseId) {
+    return new PortalData.Message(api.enroll(user, courseId).getMessage());
   }
 
   @GetMapping("/grades")
-  String grades(@RequestParam(defaultValue = "") String term, Model model) {
-    if (!user().getRole().equals("STUDENT")) return "redirect:/faculty";
-    base(model, "grades", "A record of your progress", "Review your published grades by semester.");
-    // Fetch all owned grades once so filtering never removes semester choices.
-    loadGrades(model, "");
-    model.addAttribute("selectedTerm", term);
-    if (model.getAttribute("grades") instanceof List<?> records) {
-      model.addAttribute(
-          "grades",
-          records.stream()
-              .map(Grade.class::cast)
-              .filter(g -> term.isEmpty() || g.getTerm().equals(term))
-              .toList());
-    }
-    return "portal";
+  List<PortalData.GradeItem> grades(@AuthenticationPrincipal PortalSession user) {
+    return api.grades(user, "").getGradesList().stream().map(PortalData.GradeItem::from).toList();
   }
 
   @GetMapping("/faculty")
-  String faculty(
+  PortalData.Faculty faculty(
+      @AuthenticationPrincipal PortalSession user,
       @RequestParam(defaultValue = "") String code,
       @RequestParam(defaultValue = "") String term,
-      HttpSession session,
-      Model model) {
-    if (!user().getRole().equals("FACULTY")) return "redirect:/";
-    base(
-        model,
-        "faculty",
-        "Your teaching workspace",
-        "Review your roster and publish grades with confidence.");
-    try {
-      var classes = api.classes(user()).getClassesList();
-      model.addAttribute("classes", classes);
-      TeachingClass selected =
-          classes.stream()
-              .filter(c -> c.getCourseCode().equals(code) && c.getTerm().equals(term))
-              .findFirst()
-              .orElse(classes.isEmpty() ? null : classes.getFirst());
-      if (selected != null) {
-        model.addAttribute("selectedClass", selected);
-        model.addAttribute(
-            "roster",
-            api.roster(user(), selected.getCourseCode(), selected.getTerm()).getGradesList());
-        Object pending = session.getAttribute("pendingGrades");
-        if (pending instanceof GradeUpload upload
-            && upload.getCourseCode().equals(selected.getCourseCode())
-            && upload.getTerm().equals(selected.getTerm())) {
-          model.addAttribute("preview", upload);
-        }
-      }
-    } catch (StatusRuntimeException exception) {
-      model.addAttribute("gradeError", message(exception));
+      HttpSession session) {
+    var classes =
+        api.classes(user).getClassesList().stream().map(PortalData.ClassItem::from).toList();
+    if (classes.isEmpty()) return new PortalData.Faculty(classes, null, List.of(), null);
+
+    var selected =
+        classes.stream()
+            .filter(item -> item.courseCode().equals(code) && item.term().equals(term))
+            .findFirst()
+            .orElse(classes.getFirst());
+    var roster =
+        api.roster(user, selected.courseCode(), selected.term()).getGradesList().stream()
+            .map(PortalData.GradeItem::from)
+            .toList();
+    PortalData.Preview preview = null;
+    if (session.getAttribute(PENDING_GRADES) instanceof PendingGrades pending
+        && pending.upload().getCourseCode().equals(selected.courseCode())
+        && pending.upload().getTerm().equals(selected.term())) {
+      preview =
+          new PortalData.Preview(
+              pending.id(),
+              pending.upload().getRowsList().stream()
+                  .map(row -> new PortalData.PreviewRow(row.getStudentId(), row.getValue()))
+                  .toList());
     }
-    return "portal";
+    return new PortalData.Faculty(classes, selected, roster, preview);
   }
 
-  @PostMapping("/faculty/preview")
-  String preview(
+  @PostMapping(value = "/faculty/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  void preview(
+      @AuthenticationPrincipal PortalSession user,
       @RequestParam MultipartFile file,
       @RequestParam String code,
       @RequestParam String term,
-      HttpSession session,
-      RedirectAttributes flash) {
-    session.removeAttribute("pendingGrades");
-    try {
-      if (file.isEmpty() || file.getSize() > 256 * 1024)
-        throw new IllegalArgumentException("Choose a CSV file smaller than 256 KB.");
-      GradeUpload upload =
-          CsvGrades.parse(new String(file.getBytes(), StandardCharsets.UTF_8), code, term);
-      // Validate class ownership before retaining an upload for confirmation.
-      api.roster(user(), code, term);
-      session.setAttribute("pendingGrades", upload);
-    } catch (IllegalArgumentException | IOException exception) {
-      flash.addFlashAttribute("error", exception.getMessage());
-    } catch (StatusRuntimeException exception) {
-      flash.addFlashAttribute("error", message(exception));
+      HttpSession session) {
+    synchronized (user) {
+      session.removeAttribute(PENDING_GRADES);
+      if (file.isEmpty()) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Choose a non-empty CSV file.");
+      }
+      GradeUpload upload;
+      try {
+        upload = CsvGrades.parse(new String(file.getBytes(), StandardCharsets.UTF_8), code, term);
+      } catch (IllegalArgumentException exception) {
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
+      } catch (IOException exception) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "The CSV file could not be read. Choose it again.", exception);
+      }
+      api.roster(user, code, term);
+      session.setAttribute(PENDING_GRADES, new PendingGrades(UUID.randomUUID().toString(), upload));
     }
-    flash.addAttribute("code", code);
-    flash.addAttribute("term", term);
-    return "redirect:/faculty";
   }
 
   @PostMapping("/faculty/publish")
-  String publish(HttpSession session, RedirectAttributes flash) {
-    Object pending = session.getAttribute("pendingGrades");
-    if (!(pending instanceof GradeUpload upload)) {
-      flash.addFlashAttribute("error", "Preview a grade file before publishing.");
-      return "redirect:/faculty";
+  PortalData.Message publish(
+      @AuthenticationPrincipal PortalSession user,
+      @RequestParam(defaultValue = "") String previewId,
+      HttpSession session) {
+    synchronized (user) {
+      var pending = matchingPreview(session, previewId);
+      var receipt = api.upload(user, pending.upload());
+      session.removeAttribute(PENDING_GRADES);
+      return new PortalData.Message(receipt.getMessage());
     }
-    try {
-      flash.addFlashAttribute("success", api.upload(user(), upload).getMessage());
-      session.removeAttribute("pendingGrades");
-    } catch (StatusRuntimeException exception) {
-      flash.addFlashAttribute("error", message(exception));
-    }
-    flash.addAttribute("code", upload.getCourseCode());
-    flash.addAttribute("term", upload.getTerm());
-    return "redirect:/faculty";
   }
 
   @PostMapping("/faculty/discard")
-  String discard(HttpSession session) {
-    session.removeAttribute("pendingGrades");
-    return "redirect:/faculty";
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  void discard(
+      @AuthenticationPrincipal PortalSession user,
+      @RequestParam(defaultValue = "") String previewId,
+      HttpSession session) {
+    synchronized (user) {
+      matchingPreview(session, previewId);
+      session.removeAttribute(PENDING_GRADES);
+    }
   }
 
   @GetMapping("/faculty/template")
-  ResponseEntity<String> template(@RequestParam String code, @RequestParam String term) {
-    var roster = api.roster(user(), code, term).getGradesList();
+  ResponseEntity<String> template(
+      @AuthenticationPrincipal PortalSession user,
+      @RequestParam String code,
+      @RequestParam String term) {
+    var roster = api.roster(user, code, term).getGradesList();
     StringBuilder csv = new StringBuilder("student_id,grade\n");
     roster.forEach(
         grade ->
@@ -237,54 +211,61 @@ public class PortalController {
         .body(csv.toString());
   }
 
-  private void base(Model model, String page, String title, String subtitle) {
-    model.addAttribute("user", user());
-    model.addAttribute("page", page);
-    model.addAttribute("title", title);
-    model.addAttribute("subtitle", subtitle);
-    model.addAttribute("currentTerm", TERM);
+  private List<PortalData.CourseItem> courseItems(
+      PortalSession user, String search, String department, boolean enrolledOnly) {
+    return api.courses(user, search, department, enrolledOnly).getCoursesList().stream()
+        .map(PortalData.CourseItem::from)
+        .toList();
   }
 
-  private void loadCourses(Model model, String search, String department, boolean enrolledOnly) {
-    try {
-      List<Course> courses = api.courses(user(), search, department, enrolledOnly).getCoursesList();
-      List<Course> enrolled = courses.stream().filter(Course::getEnrolled).toList();
-      model.addAttribute("courses", courses);
-      model.addAttribute("enrolled", enrolled);
-      model.addAttribute("units", enrolled.stream().mapToInt(Course::getUnits).sum());
-      model.addAttribute(
-          "openCourses", courses.stream().filter(c -> c.getOpen() && c.getSeats() > 0).count());
-    } catch (StatusRuntimeException exception) {
-      model.addAttribute("courseError", message(exception));
+  private PendingGrades matchingPreview(HttpSession session, String previewId) {
+    if (session.getAttribute(PENDING_GRADES) instanceof PendingGrades pending
+        && pending.id().equals(previewId)) {
+      return pending;
     }
-  }
-
-  private void loadGrades(Model model, String term) {
-    try {
-      List<Grade> grades = api.grades(user(), term).getGradesList();
-      model.addAttribute("grades", grades);
-      model.addAttribute("terms", grades.stream().map(Grade::getTerm).distinct().toList());
-    } catch (StatusRuntimeException exception) {
-      model.addAttribute("gradeError", message(exception));
-    }
-  }
-
-  static String message(StatusRuntimeException exception) {
-    return switch (exception.getStatus().getCode()) {
-      case UNAVAILABLE, DEADLINE_EXCEEDED, INTERNAL, UNKNOWN ->
-          "This feature is temporarily unavailable. Please try again shortly.";
-      default ->
-          Optional.ofNullable(exception.getStatus().getDescription())
-              .orElse("The request could not be completed.");
-    };
+    throw new ResponseStatusException(
+        HttpStatus.CONFLICT,
+        "This preview is no longer current. Review the latest file before publishing.");
   }
 
   @ExceptionHandler(StatusRuntimeException.class)
-  ResponseEntity<String> rpcError(StatusRuntimeException exception) {
+  ResponseEntity<PortalData.Message> rpcError(
+      StatusRuntimeException exception, HttpServletRequest request, HttpServletResponse response) {
     HttpStatus status =
-        exception.getStatus().getCode() == Status.Code.PERMISSION_DENIED
-            ? HttpStatus.FORBIDDEN
-            : HttpStatus.SERVICE_UNAVAILABLE;
-    return ResponseEntity.status(status).contentType(MediaType.TEXT_PLAIN).body(message(exception));
+        switch (exception.getStatus().getCode()) {
+          case INVALID_ARGUMENT, OUT_OF_RANGE -> HttpStatus.BAD_REQUEST;
+          case UNAUTHENTICATED -> HttpStatus.UNAUTHORIZED;
+          case PERMISSION_DENIED -> HttpStatus.FORBIDDEN;
+          case NOT_FOUND -> HttpStatus.NOT_FOUND;
+          case ALREADY_EXISTS, ABORTED, FAILED_PRECONDITION -> HttpStatus.CONFLICT;
+          default -> HttpStatus.SERVICE_UNAVAILABLE;
+        };
+    if (status == HttpStatus.UNAUTHORIZED
+        && !request.getRequestURI().equals(request.getContextPath() + "/api/login")) {
+      // A rejected refresh no longer authorizes new requests. A service outage does not log out.
+      var logout = new SecurityContextLogoutHandler();
+      logout.setInvalidateHttpSession(false);
+      logout.logout(request, response, SecurityContextHolder.getContext().getAuthentication());
+    }
+    String message =
+        status == HttpStatus.SERVICE_UNAVAILABLE
+            ? "This feature is temporarily unavailable. Please try again shortly."
+            : Objects.requireNonNullElse(
+                exception.getStatus().getDescription(), "The request could not be completed.");
+    return error(status, message);
+  }
+
+  @ExceptionHandler(ResponseStatusException.class)
+  ResponseEntity<PortalData.Message> statusError(ResponseStatusException exception) {
+    return error(exception.getStatusCode(), exception.getReason());
+  }
+
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  ResponseEntity<PortalData.Message> oversizedUpload() {
+    return error(HttpStatus.PAYLOAD_TOO_LARGE, "Choose a CSV file no larger than 256 KB.");
+  }
+
+  private ResponseEntity<PortalData.Message> error(HttpStatusCode status, String message) {
+    return ResponseEntity.status(status).body(new PortalData.Message(message));
   }
 }

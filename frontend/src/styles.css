@@ -353,25 +353,10 @@ h3 {
   padding: 35px 42px 0;
 }
 .page-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 29px;
-  gap: 20px;
 }
 .page-heading h1 {
   margin: 9px 0 8px;
-}
-.page-heading p {
-  font-size: 12px;
-}
-.heading-index {
-  font-size: 37px;
-  color: #687b89;
-  letter-spacing: -2px;
-  font-weight: 300;
-  align-self: flex-start;
-  margin-top: 14px;
 }
 .welcome-banner {
   display: flex;
@@ -646,20 +631,11 @@ h3 {
   font-size: 11px;
 }
 .page-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
   border-top: 1px solid var(--border);
   padding: 20px 0 23px;
   margin-top: 35px;
   color: #61717f;
   font-size: 10px;
-}
-.footer-star {
-  font-size: 16px;
-  color: var(--accent);
-  margin-left: 12px;
 }
 .filter-bar {
   display: flex;
@@ -1040,7 +1016,7 @@ tr:last-child td {
   color: #a4d3bf;
   font-size: 10px;
 }
-.story-copy h1 {
+.story-copy h2 {
   font-size: 56px;
   line-height: 1.14;
   letter-spacing: -2px;
@@ -1110,7 +1086,7 @@ tr:last-child td {
   width: 100%;
   max-width: 350px;
 }
-.login-form-wrap > h2 {
+.login-form-wrap > h1 {
   font-size: 32px;
   font-weight: 600;
   letter-spacing: -1px;
@@ -1222,7 +1198,7 @@ code {
     padding-left: 40px;
     padding-right: 40px;
   }
-  .story-copy h1 {
+  .story-copy h2 {
     font-size: 48px;
   }
 }
@@ -1289,9 +1265,6 @@ code {
   .page-heading h1 {
     font-size: 28px;
   }
-  .heading-index {
-    display: none;
-  }
   .course-grid {
     gap: 16px;
   }
@@ -1305,7 +1278,7 @@ code {
     padding: 35px 30px;
     min-height: 680px;
   }
-  .story-copy h1 {
+  .story-copy h2 {
     font-size: 39px;
   }
   .orbit {
@@ -1367,10 +1340,6 @@ code {
   .page-heading h1 {
     font-size: 26px;
     letter-spacing: -0.8px;
-  }
-  .page-heading p {
-    font-size: 12px;
-    max-width: 300px;
   }
   .eyebrow {
     font-size: 9px;
@@ -1585,7 +1554,7 @@ code {
   .login-form-panel {
     padding: 45px 28px;
   }
-  .login-form-wrap > h2 {
+  .login-form-wrap > h1 {
     font-size: 31px;
   }
   .login-footnote {
@@ -1597,6 +1566,29 @@ code {
   .login-form-wrap > .muted {
     font-size: 12px;
   }
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.app-loading {
+  max-width: 520px;
+  margin: 48px auto;
+  padding: 0 24px;
+}
+
+.feature-loading {
+  margin: 16px 0 24px;
+  color: var(--muted);
+}
+
+.unavailable button {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-decoration: underline;
+  color: #77551c;
 }
 @media (prefers-reduced-motion: reduce) {
   *,

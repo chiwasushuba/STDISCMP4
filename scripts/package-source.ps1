@@ -4,14 +4,18 @@ Add-Type -AssemblyName System.IO.Compression
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $outputDirectory = Join-Path $projectRoot 'deliverables'
 New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
-$archivePath = Join-Path $outputDirectory ('northstar-source-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.zip')
-$sourceRoots = @('.mvn', 'contracts', 'service-common', 'identity-service', 'course-service', 'grade-service', 'api-orchestrator', 'web-app', 'deployment', 'scripts', 'tests', 'docs')
-$rootFiles = @('.gitignore', '.dockerignore', 'pom.xml', 'mvnw', 'mvnw.cmd', 'Dockerfile', 'compose.yaml', 'requirements.txt', 'README.md', 'package.json', 'package-lock.json', 'playwright.config.cjs')
+$archivePath = Join-Path $outputDirectory ('animoroll-source-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.zip')
+$sourceRoots = @('.mvn', 'contracts', 'service-common', 'identity-service', 'course-service', 'grade-service', 'api-orchestrator', 'web-app', 'frontend/src', 'deployment', 'scripts', 'tests', 'docs')
+$sourceFiles = @('.gitignore', '.dockerignore', 'pom.xml', 'mvnw', 'mvnw.cmd', 'Dockerfile', 'compose.yaml', 'requirements.txt', 'README.md', 'package.json', 'package-lock.json', 'playwright.config.cjs', 'frontend/index.html', 'frontend/package.json', 'frontend/package-lock.json', 'frontend/vite.config.js')
 $files = @()
 foreach ($directory in $sourceRoots) {
-    $files += Get-ChildItem -LiteralPath (Join-Path $projectRoot $directory) -File -Recurse | Where-Object { $_.FullName -notmatch '[\\/]target[\\/]' }
+    $files += Get-ChildItem -LiteralPath (Join-Path $projectRoot $directory) -File -Recurse | Where-Object {
+        $relative = $_.FullName.Substring($projectRoot.Length + 1)
+        $relative -notmatch '(^|[\\/])(target|node_modules|dist|secrets)[\\/]' -and
+        $_.Name -notmatch '^(\.env($|\.)|\.npmrc$)'
+    }
 }
-foreach ($name in $rootFiles) { $files += Get-Item -LiteralPath (Join-Path $projectRoot $name) }
+foreach ($name in $sourceFiles) { $files += Get-Item -LiteralPath (Join-Path $projectRoot $name) }
 $archive = [System.IO.Compression.ZipFile]::Open($archivePath, [System.IO.Compression.ZipArchiveMode]::Create)
 try {
     foreach ($file in $files) {

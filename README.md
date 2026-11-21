@@ -1,52 +1,83 @@
-# Northstar · Distributed enrollment portal
+# AnimoRoll · Distributed enrollment portal
 
-A Java/Spring Boot enrollment system with a standalone MVC view node, a thin gRPC API orchestrator, and three independently persisted domain services.
+A Vite enrollment portal served by a Spring MVC web node, with a thin gRPC API orchestrator and three independently persisted Spring Boot domain services.
 
-## Start here
+## Build and run with Docker
 
-Requirements: Docker Desktop with Linux containers, Docker Compose 2.24.4+, and Java 21+ for credential setup. The Maven wrapper downloads Maven 3.9.11. Docker builds use Java 21; Java 22 also works for local development.
+Install Docker Desktop with Linux containers, Docker Compose 2.24.4 or newer, and JDK 21 or newer. Docker supplies Node.js, Maven, and Java 21 for the image builds. The host JDK runs the credential setup.
 
-From PowerShell in this directory:
+From the repository root, generate `.env` and the JWT signing keys. Use `java scripts/GenerateKeys.java` on macOS or Linux.
 
 ```powershell
 ./scripts/setup.ps1
-docker compose up -d --build
 ```
 
-Open **http://localhost:8080**. The first build downloads dependencies and Java images; allow services to finish starting before signing in. A temporary feature-unavailable message during startup can be retried.
+If you want to use the example password below, set it before the first start. Then build the images, start the applications and databases, and check their status.
 
-Demo accounts:
+```powershell
+docker compose build
+docker compose up -d
+docker compose ps
+```
+
+Docker builds the Vite frontend first. Maven compiles the Java services and bundles the Vite output into the `web-app` JAR. The first build downloads images and dependencies. Once the services finish starting, open **http://localhost:8080**. If a service is still initializing, use the retry control after it starts.
+
+### Example login credentials
 
 | Email | Role |
 | --- | --- |
-| student@northstar.edu | Alex Morgan, student 2024-001 |
-| student2@northstar.edu | Sam Rivera, student 2024-002 |
-| faculty@northstar.edu | Dr. Jordan Reyes, faculty FAC-001 |
+| `student@northstar.edu` | Alex Morgan, student 2024-001 |
+| `student2@northstar.edu` | Sam Rivera, student 2024-002 |
+| `faculty@northstar.edu` | Dr. Jordan Reyes, faculty FAC-001 |
 
-Their shared initial password is the randomly generated **DEMO_PASSWORD** in your local `.env`. Open that file locally to retrieve it. Setup preserves existing keys and credentials. Demo accounts are inserted only when `DEMO_ENABLED=true`; changing the environment password after the account exists does not reset it.
+All three accounts share the initial password from `DEMO_PASSWORD` in your local `.env`. Setup generates a random value. To use a fixed example on a fresh, local demo database, replace that line after setup and before starting the app for the first time.
 
-No credentials or private keys belong in source control. The private key is mounted only in the identity service; all nodes receive the public key. Keep `.env` and `secrets/` with the deployment, outside source archives.
+```dotenv
+DEMO_PASSWORD=AnimoRoll-Demo-2026
+```
 
-On Linux/macOS, credential setup is `java scripts/GenerateKeys.java`. On Linux Docker hosts, allow the runtime UID to read its private-key mount: `sudo chown 10001:10001 secrets/private.pem` followed by `sudo chmod 600 secrets/private.pem`. The runtime image runs as UID 10001, not root. Windows Docker Desktop handles bind mounts separately.
+For example, sign in as `student@northstar.edu` with `AnimoRoll-Demo-2026` after making that change. The identity service seeds demo accounts when `DEMO_ENABLED=true`, which the local Compose file enables. Existing accounts keep the password they were created with. Setup also preserves existing `.env` and key files.
 
-## Local Java development
+Keep `.env` and `secrets/` with your local installation. The identity service uses the private key to sign tokens. Services use the public key to verify them. On Linux Docker hosts, grant the container user read access to the private key with `sudo chown 10001:10001 secrets/private.pem` and `sudo chmod 600 secrets/private.pem`.
 
-This starts the three PostgreSQL containers and five Java processes, without containerizing the Java services:
+## Compile and run locally on Windows
+
+Install JDK 21 or newer, Node.js 22.12+ or 24 LTS, and Docker Desktop for the three PostgreSQL databases. The Maven wrapper downloads Maven 3.9.11. If the full Docker stack is running, stop it with `docker compose down` to free port 8080 before launching the local Java processes.
+
+Run setup, then build the application from the repository root in PowerShell. For the fixed example login, edit `.env` after setup and before running the final command.
 
 ```powershell
 ./scripts/setup.ps1
-./scripts/run-local.ps1
+npm.cmd --prefix frontend ci
+npm.cmd --prefix frontend run build
+./mvnw.cmd -B -DskipTests clean package
+./scripts/run-local.ps1 -SkipBuild
 ```
 
-Logs are in `.tools/logs/`; process IDs are recorded in `.tools/local-processes.json`. Stop those Java processes with `./scripts/stop-local.ps1`. Database containers and persistent volumes remain intact. Do not run the local Java stack and the full Docker stack simultaneously: the web port will conflict.
+Vite writes `frontend/dist/`. Maven writes the service JARs into each module’s `target/` folder and includes the Vite bundle in `web-app/target/web-app-1.0.0.jar`. The last command starts the PostgreSQL containers and launches the five Java applications. Open **http://localhost:8080**.
 
-Build and test independently:
+After setup, `./scripts/run-local.ps1` also handles compilation and startup in one command. Local logs are in `.tools/logs/`. Run `./scripts/stop-local.ps1` to stop the Java processes. The database containers and volumes remain available.
+
+### Live frontend development
+
+For live frontend changes, keep Spring running on port 8080 from either stack and run:
+
+```powershell
+npm --prefix frontend ci
+npm --prefix frontend run dev
+```
+
+Open **http://127.0.0.1:5173**. Vite proxies `/api` to Spring. In a packaged build, Spring serves the UI and API on port 8080.
+
+## Run the tests
+
+Run the JVM tests with Docker running so Testcontainers can start PostgreSQL.
 
 ```powershell
 ./mvnw.cmd -B verify
 ```
 
-Tests use real PostgreSQL through Testcontainers, so Docker must be running. No local `.env` or signing keys are needed for tests. On Unix use `sh ./mvnw -B verify`. A compile/package-only build is `./mvnw.cmd -B -DskipTests package`; it does not establish test success.
+On macOS or Linux, use `sh ./mvnw -B verify`.
 
 Browser checks use Node.js and Playwright as development-only tools. Start the full Docker stack first, then:
 
@@ -59,7 +90,7 @@ npm run test:faults
 Remove-Item Env:TEST_FAULTS
 ```
 
-Fault tests intentionally stop and restart local Northstar containers, then check unaffected features and recovery. Run them against the local Docker stack only. They restore stopped containers in `finally` blocks. The journey tests use the synthetic demo accounts and update their enrollment/grade records. Browser captures are written to `.evidence/browser/`; login credentials are read locally and tracing is disabled.
+Fault tests intentionally stop and restart local Docker containers, then check unaffected features and recovery. Run them against the local Docker stack only. They restore stopped containers in `finally` blocks. The journey tests use the synthetic demo accounts and update their enrollment and grade records. Browser captures are written to `.evidence/browser/`. The tests read credentials locally and disable tracing.
 
 Formatting: `npm run format:web:check` checks HTML/CSS/JS. `./mvnw.cmd -B com.spotify.fmt:fmt-maven-plugin:2.29:check` checks Java; use the plugin's `format` goal to apply formatting.
 
@@ -88,7 +119,8 @@ Download the selected class roster to get valid student IDs. Blank grades in the
 ```text
 contracts/          Versioned protobuf APIs and generated Java stubs
 service-common/     JWT validation, RPC security, server lifecycle, error mapping
-web-app/            Spring MVC controllers, Thymeleaf views, CSS, browser sessions
+frontend/           Vite project with plain HTML, CSS, and JavaScript views
+web-app/            Spring MVC browser endpoints, sessions, static asset hosting
 api-orchestrator/   gRPC controllers forwarding requests to one owning service
 identity-service/   Accounts, password verification, JWT signing, refresh sessions
 course-service/     Catalog, enrollment, seat allocation
@@ -96,6 +128,9 @@ grade-service/      Teaching assignments, rosters, historical and uploaded grade
 deployment/         Configuration for separate networked machines
 scripts/            Local credentials and process management
 docs/               Architecture, deployment, and demonstration guide
+tests/              Playwright journeys and service outage checks
+secrets/            Locally generated JWT keys, excluded from Git
+deliverables/       Submission source archives, demo video, and slides
 ```
 
 Each domain service keeps its business rules in `*Service` and exposes them through `*Controller` gRPC handlers. JDBC is used directly rather than adding repositories that only forward identical calls. No service reads another service's tables.
@@ -120,4 +155,6 @@ docker compose down
 
 `down` preserves the databases. Do not add `--volumes` unless you intend to delete all enrollment, session, and grade data.
 
-Create a source-only submission archive with `./scripts/package-source.ps1`. It includes source, contracts, tests, build scripts, and documentation. It excludes local credentials, signing keys, databases, downloaded tools, dependencies, and build outputs. The recipient runs setup to generate their own local credentials.
+## Submission deliverables
+
+The [deliverables folder](deliverables/) contains the demo video, slides, and dated source archives. Run `./scripts/package-source.ps1` to create an `animoroll-source-*.zip` from the current Vite and Spring sources. The archive includes this README, contracts, tests, build scripts, and deployment instructions. It excludes credentials, databases, downloaded tools, dependencies, and build outputs. The recipient runs setup to generate local credentials.

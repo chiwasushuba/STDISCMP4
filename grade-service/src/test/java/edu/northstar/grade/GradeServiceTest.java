@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.*;
 import edu.northstar.common.Actor;
 import edu.northstar.contracts.*;
 import io.grpc.*;
+import java.util.List;
+import java.util.concurrent.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -44,6 +46,33 @@ class GradeServiceTest extends DatabaseTest {
                 "select count(*) from grade_record where course_code='CS 301' and value<>''",
                 Integer.class))
         .isZero();
+  }
+
+  @Test
+  void overlappingUploadsInOppositeOrdersBothCommit() throws Exception {
+    var first = upload("2024-002");
+    var second =
+        first.toBuilder()
+            .clearRows()
+            .addRows(GradeRow.newBuilder().setStudentId("2024-002").setValue("2.00"))
+            .addRows(GradeRow.newBuilder().setStudentId("2024-001").setValue("2.00"))
+            .build();
+    var start = new CountDownLatch(1);
+    try (var executor = Executors.newFixedThreadPool(2)) {
+      var firstResult = executor.submit(() -> publishAfter(start, first));
+      var secondResult = executor.submit(() -> publishAfter(start, second));
+      start.countDown();
+      assertThat(firstResult.get(10, TimeUnit.SECONDS).getMessage()).contains("2 grades saved");
+      assertThat(secondResult.get(10, TimeUnit.SECONDS).getMessage()).contains("2 grades saved");
+    }
+    var roster = actor("FAC-001", "FACULTY").call(() -> service.roster("CS 301", TERM));
+    assertThat(roster.getGradesList().stream().map(Grade::getValue).toList())
+        .isIn(List.of(List.of("1.25", "1.50"), List.of("2.00", "2.00")));
+  }
+
+  private Receipt publishAfter(CountDownLatch start, GradeUpload upload) throws Exception {
+    start.await();
+    return actor("FAC-001", "FACULTY").call(() -> service.upload(upload));
   }
 
   @Test

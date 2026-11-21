@@ -51,25 +51,30 @@ public class GradeService {
     Rpc.check(
         request.getRowsCount() > 0 && request.getRowsCount() <= 500,
         "Upload between 1 and 500 grade rows.");
-    Set<String> seen = new HashSet<>();
+    // Consistent lock order prevents overlapping uploads from deadlocking.
+    Map<String, String> grades = new TreeMap<>();
     for (GradeRow row : request.getRowsList()) {
       Rpc.check(
-          row.getStudentId().length() <= 40 && seen.add(row.getStudentId()),
+          row.getStudentId().length() <= 40 && !grades.containsKey(row.getStudentId()),
           "Each student must appear once in the file.");
-      String value = normalizeGrade(row.getValue());
+      grades.put(row.getStudentId(), normalizeGrade(row.getValue()));
+    }
+    for (var grade : grades.entrySet()) {
       int updated =
           jdbc.update(
               "update grade_record set value=? where student_id=? and course_code=? and term=?",
-              value,
-              row.getStudentId(),
+              grade.getValue(),
+              grade.getKey(),
               request.getCourseCode(),
               request.getTerm());
       Rpc.check(
           updated == 1,
-          "Student " + row.getStudentId() + " is not in this class roster. No grades were saved.");
+          "Student " + grade.getKey() + " is not in this class roster. No grades were saved.");
     }
     return Receipt.newBuilder()
-        .setMessage(request.getRowsCount() + " grades saved. Review the updated roster below.")
+        .setMessage(
+            (grades.size() == 1 ? "1 grade" : grades.size() + " grades")
+                + " saved. Review the updated roster below.")
         .build();
   }
 

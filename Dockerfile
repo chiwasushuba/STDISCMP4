@@ -1,3 +1,11 @@
+FROM node:24.15.0-alpine AS frontend-build
+WORKDIR /frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci
+COPY frontend/index.html frontend/vite.config.js ./
+COPY frontend/src src
+RUN npm run build
+
 FROM maven:3.9.11-eclipse-temurin-21 AS build
 WORKDIR /workspace
 COPY pom.xml ./
@@ -8,6 +16,7 @@ COPY course-service course-service
 COPY grade-service grade-service
 COPY api-orchestrator api-orchestrator
 COPY web-app web-app
+COPY --from=frontend-build /frontend/dist frontend/dist
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q -DskipTests package
 
 FROM eclipse-temurin:21-jre

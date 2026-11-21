@@ -6,7 +6,7 @@ The default Compose file runs all containers on one host for development. It dem
 
 | Machine | Example private IP | Run |
 | --- | --- | --- |
-| View | 192.168.50.10 | web-app |
+| View | 192.168.50.10 | web-app, serving the Vite build and browser API |
 | API | 192.168.50.11 | api-orchestrator |
 | Identity | 192.168.50.12 | identity-service and identity-db |
 | Courses | 192.168.50.13 | course-service and course-db |
@@ -62,6 +62,8 @@ On the view host, set `ORCHESTRATOR_TARGET=192.168.50.11:9090` in `.env`, then:
 ```powershell
 docker compose -f compose.yaml -f deployment/compose.nodes.yaml up -d --build web-app
 ```
+
+The image build compiles the Vite frontend and packages it inside the web application JAR. The view host serves both pages and the browser API on port 8080. Its calls to the API host use gRPC.
 
 Open `http://192.168.50.10:8080`. Allow inbound TCP 8080 to the view from your demonstration browser, 9090 to the API from the view, and the domain gRPC ports from the API. Do not expose PostgreSQL ports to the LAN; they are bound to loopback in the base file. Containers use their local Docker network for database traffic.
 

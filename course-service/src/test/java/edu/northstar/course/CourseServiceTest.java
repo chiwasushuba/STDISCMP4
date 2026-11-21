@@ -94,4 +94,13 @@ class CourseServiceTest extends DatabaseTest {
     assertThat(result.getCourses(0).getEnrolled()).isFalse();
     assertThat(result.getCourses(0).getSeats()).isEqualTo(29);
   }
+
+  @Test
+  void catalogSearchTreatsSpecialCharactersAsLiteralText() throws Exception {
+    for (String search : List.of("%", "_", "\\")) {
+      var result =
+          student("A").call(() -> service.list(CourseQuery.newBuilder().setSearch(search).build()));
+      assertThat(result.getCoursesList()).as("search for %s", search).isEmpty();
+    }
+  }
 }

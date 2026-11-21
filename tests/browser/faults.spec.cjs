@@ -1,6 +1,6 @@
 const { test, expect } = require("@playwright/test");
 const { execFileSync } = require("node:child_process");
-const { login } = require("./helpers.cjs");
+const { login, waitForReady } = require("./helpers.cjs");
 
 test.skip(process.env.TEST_FAULTS !== "1", "Set TEST_FAULTS=1 only against the local full Docker stack.");
 
@@ -16,8 +16,11 @@ for (const node of ["grade-service", "course-service", "identity-service", "grad
       docker("stop", node);
       const response = await page.goto("/");
       expect(response.status()).toBe(200);
+      await waitForReady(page);
       if (node === "identity-service") {
         await expect(page.locator(".unavailable")).toHaveCount(0);
+        await expect(page.locator(".course-card").first()).toBeVisible();
+        await expect(page.locator(".record-summary")).toBeVisible();
         const other = await page.context().browser().newContext();
         try {
           const fresh = await other.newPage();
@@ -29,14 +32,38 @@ for (const node of ["grade-service", "course-service", "identity-service", "grad
         } finally { await other.close(); }
       } else {
         await expect(page.locator(".unavailable")).toHaveCount(1);
-        await page.goto(node === "course-service" ? "/grades" : "/courses");
+        if (node === "course-service") {
+          await expect(page.locator(".record-summary")).toBeVisible();
+          await page.goto("/grades");
+          await expect(page.getByRole("table", { name: "Published grades" })).toBeVisible();
+        } else {
+          await expect(page.locator(".course-card").first()).toBeVisible();
+          await page.goto("/courses");
+          await expect(page.locator(".course-card").first()).toBeVisible();
+        }
+        await waitForReady(page);
         await expect(page.locator(".unavailable")).toHaveCount(0);
+        await page.goto("/");
+        await waitForReady(page);
+        await expect(page.locator(".unavailable")).toHaveCount(1);
+        await expect(page.locator('[aria-live="polite"]').filter({ hasText: "temporarily unavailable" })).toHaveCount(1);
       }
       await page.screenshot({ path: `.evidence/browser/outage-${node}.png`, fullPage: true });
     } finally { docker("start", node); }
     await expect(async () => {
-      await page.goto("/");
+      if (node === "identity-service") {
+        await page.goto("/");
+        await waitForReady(page);
+      } else {
+        await page.getByRole("button", { name: "Try again", exact: true }).click();
+        await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+        const panel = node === "course-service" ? "Course overview" : "Academic record";
+        await expect(page.getByRole("region", { name: panel })).toBeFocused();
+        await expect(page.locator('[aria-live="polite"]').filter({ hasText: `${panel} updated.` })).toHaveCount(1);
+      }
       await expect(page.locator(".unavailable")).toHaveCount(0);
+      await expect(page.locator(".course-card").first()).toBeVisible();
+      await expect(page.locator(".record-summary")).toBeVisible();
     }).toPass({ timeout: 30000, intervals: [1000, 2000] });
     if (node === "identity-service") {
       // A valid old JWT proves offline verification, not that login has restarted.

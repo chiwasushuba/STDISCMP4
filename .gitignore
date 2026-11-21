@@ -8,6 +8,8 @@ secrets/
 *.iml
 data/
 node_modules/
+frontend/dist/
+frontend/.env.*
 test-results/
 playwright-report/
 deliverables/*.zip
