@@ -25,7 +25,7 @@ for (const node of ["grade-service", "course-service", "identity-service", "grad
         try {
           const fresh = await other.newPage();
           await fresh.goto("http://localhost:8080/login");
-          await fresh.getByLabel("University email").fill("student@northstar.edu");
+          await fresh.getByLabel("University email").fill("student@animoroll.edu");
           await fresh.getByLabel("Password", { exact: true }).fill("deliberately-incorrect-password");
           await fresh.getByRole("button", { name: "Sign in", exact: true }).click();
           await expect(fresh.getByRole("alert")).toContainText("temporarily unavailable");

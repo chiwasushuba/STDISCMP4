@@ -1,4 +1,4 @@
-name: northstar
+name: animoroll
 x-app: &app
   restart: unless-stopped
   environment: &base-env

@@ -1,6 +1,6 @@
 syntax = "proto3";
-package northstar.v1;
-option java_package = "edu.northstar.contracts";
+package animoroll.v1;
+option java_package = "edu.animoroll.contracts";
 option java_multiple_files = true;
 
 message Empty {}

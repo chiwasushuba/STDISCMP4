@@ -54,7 +54,7 @@ The web node, orchestrator, and each database have one instance. Database replic
 
 Automated accessibility checks and viewport emulation do not establish complete WCAG conformance, physical-device usability, or the owner's design acceptance. A manual screen-reader audit and formal load testing were not performed. HTTPS/gRPC TLS is not configured for the private local demonstration stack.
 
-The source archive, captioned walkthrough, and PowerPoint are in `deliverables/`. The walkthrough follows the published requirements. Instructor-provided final test cases are pending.
+The captioned walkthrough follows the published requirements. Instructor-provided final test cases are pending.
 
 ## Implementation findings
 

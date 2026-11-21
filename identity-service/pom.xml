@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>edu.northstar</groupId>
+    <groupId>edu.animoroll</groupId>
     <artifactId>enrollment-system</artifactId>
     <version>1.0.0</version>
   </parent>
@@ -17,7 +17,7 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>edu.northstar</groupId>
+      <groupId>edu.animoroll</groupId>
       <artifactId>service-common</artifactId>
       <version>${project.version}</version>
     </dependency>

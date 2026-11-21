@@ -26,9 +26,9 @@ Docker builds the Vite frontend first. Maven compiles the Java services and bund
 
 | Email | Role |
 | --- | --- |
-| `student@northstar.edu` | Alex Morgan, student 2024-001 |
-| `student2@northstar.edu` | Sam Rivera, student 2024-002 |
-| `faculty@northstar.edu` | Dr. Jordan Reyes, faculty FAC-001 |
+| `student@animoroll.edu` | Alex Morgan, student 2024-001 |
+| `student2@animoroll.edu` | Sam Rivera, student 2024-002 |
+| `faculty@animoroll.edu` | Dr. Jordan Reyes, faculty FAC-001 |
 
 All three accounts share the initial password from `DEMO_PASSWORD` in your local `.env`. Setup generates a random value. To use a fixed example on a fresh, local demo database, replace that line after setup and before starting the app for the first time.
 
@@ -36,7 +36,17 @@ All three accounts share the initial password from `DEMO_PASSWORD` in your local
 DEMO_PASSWORD=AnimoRoll-Demo-2026
 ```
 
-For example, sign in as `student@northstar.edu` with `AnimoRoll-Demo-2026` after making that change. The identity service seeds demo accounts when `DEMO_ENABLED=true`, which the local Compose file enables. Existing accounts keep the password they were created with. Setup also preserves existing `.env` and key files.
+For example, sign in as `student@animoroll.edu` with `AnimoRoll-Demo-2026` after making that change. The identity service seeds demo accounts when `DEMO_ENABLED=true`, which the local Compose file enables. Existing accounts keep the password they were created with. Setup also preserves existing `.env` and key files.
+
+### Upgrade an existing Northstar installation
+
+To reuse the PostgreSQL volumes from the old Compose project, rebuild all five application nodes together under the existing project name.
+
+```powershell
+docker compose -p northstar up -d --build
+```
+
+Use `-p northstar` with subsequent Compose commands for that installation. The default `animoroll` project creates its own volumes. The identity migration updates the three demo emails in the existing database while preserving account IDs, passwords, and linked records. Sign in again with the new email after the upgrade. For a multi-machine setup, deploy the rebuilt nodes together because their gRPC service names and JWT issuer and audience changed.
 
 Keep `.env` and `secrets/` with your local installation. The identity service uses the private key to sign tokens. Services use the public key to verify them. On Linux Docker hosts, grant the container user read access to the private key with `sudo chown 10001:10001 secrets/private.pem` and `sudo chmod 600 secrets/private.pem`.
 
@@ -130,7 +140,6 @@ scripts/            Local credentials and process management
 docs/               Architecture, deployment, and demonstration guide
 tests/              Playwright journeys and service outage checks
 secrets/            Locally generated JWT keys, excluded from Git
-deliverables/       Submission source archives, demo video, and slides
 ```
 
 Each domain service keeps its business rules in `*Service` and exposes them through `*Controller` gRPC handlers. JDBC is used directly rather than adding repositories that only forward identical calls. No service reads another service's tables.
@@ -155,6 +164,6 @@ docker compose down
 
 `down` preserves the databases. Do not add `--volumes` unless you intend to delete all enrollment, session, and grade data.
 
-## Submission deliverables
+## Create a source archive
 
-The [deliverables folder](deliverables/) contains the demo video, slides, and dated source archives. Run `./scripts/package-source.ps1` to create an `animoroll-source-*.zip` from the current Vite and Spring sources. The archive includes this README, contracts, tests, build scripts, and deployment instructions. It excludes credentials, databases, downloaded tools, dependencies, and build outputs. The recipient runs setup to generate local credentials.
+Run `./scripts/package-source.ps1` to create a local `deliverables/animoroll-source-*.zip` from the current Vite and Spring sources. The archive includes this README, contracts, tests, build scripts, and deployment instructions. It excludes credentials, databases, downloaded tools, dependencies, and build outputs. The recipient runs setup to generate local credentials.
