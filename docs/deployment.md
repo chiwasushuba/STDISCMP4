@@ -19,7 +19,7 @@ Use Docker Compose 2.24.4+ on each machine. Actual private addresses must match 
 1. Copy source and build images on each host, or build/tag images once and transfer them through your chosen image archive/registry workflow.
 2. Run credential setup **once**, then securely copy matching public keys to every host. Only the identity host receives `private.pem`. Keep local `.env` secrets outside the source archive. Each domain host needs its own database password; identity also needs `DEMO_PASSWORD`.
 3. Because the complete base Compose file is interpolated before a selected service starts, provide all four credential variable names in each machine's `.env`; unused variables can contain independent placeholders. Never distribute the private key outside the identity node.
-4. On Linux, grant UID 10001 read access to the private key as described in the README. Keep the public key readable by the runtime account. Setup does not rotate keys or overwrite an existing pair.
+4. On each Unix host, keep `secrets/` private with `chmod 700 secrets` and make the mounted key files readable by the container with `chmod 644 secrets/public.pem`. On the identity host, also run `chmod 644 secrets/private.pem`. Setup preserves any existing key pair.
 
 The Java-to-Java lab traffic is plaintext gRPC. Restrict the private network and host firewalls to the listed peers. For an untrusted network, add gRPC TLS and an HTTPS reverse proxy before deployment. Set `COOKIE_SECURE=true` when the browser uses HTTPS.
 
@@ -71,8 +71,8 @@ The override file publishes the backend gRPC listener using host ports. It is **
 
 ## Readiness, recovery, and rollback
 
-PostgreSQL readiness checks gate each owning service. Java services may still be starting after `up` returns. Review `docker compose logs --tail 60 <service>` and load its relevant page. A successful login, catalog query, and grade-history query establish the three domain paths. Process-running status alone does not establish application readiness.
+PostgreSQL readiness checks gate each owning service. Add `--wait --wait-timeout 180` to the host commands to wait for the local services' health checks. The gRPC services accept connections after their startup tasks finish. Sign in and open the catalog and grade history to check that the machines can reach one another. Review `docker compose logs --tail 60 <service>` if a check fails.
 
 Stop/start one domain service or power off its VM, and follow the failure matrix in `demo.md`. Recovery requires its database and service to be reachable; clients reconnect and the retry link reloads the affected page. Database volumes retain existing enrollments and published grades.
 
-For changes, build/tag a new immutable image, preserve the old tag, and back up the affected PostgreSQL database before migration. Current migrations initialize the schema only. Future releases must use additive, compatible migrations if an older image is to run against the upgraded database; reverting an image alone does not reverse database changes. No automatic multi-host failover is included.
+For changes, build and tag a new immutable image, preserve the old tag, and back up the affected PostgreSQL database before migration. Use additive, compatible migrations if an older image needs to run against the upgraded database. Restore from a database backup to roll back a data migration. No automatic multi-host failover is included.

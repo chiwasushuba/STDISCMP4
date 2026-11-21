@@ -1,6 +1,6 @@
 # Demonstration and acceptance scenarios
 
-Use synthetic demo accounts only. The instructor's final test cases have not yet been supplied; map them onto or extend these scenarios when available.
+Follow the [quick start](../README.md#quick-start-with-a-populated-database) to start the demo and find the generated password in `.env`. Use the synthetic student and faculty accounts listed there. A fresh database has six courses, historical grades, and the CS 301 roster ready for the walkthrough. The instructor's final test cases have not yet been supplied. Map them onto or extend these scenarios when available.
 
 ## Suggested recording sequence
 

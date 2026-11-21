@@ -1,80 +1,126 @@
 # AnimoRoll · Distributed enrollment portal
 
-A Vite enrollment portal served by a Spring MVC web node, with a thin gRPC API orchestrator and three independently persisted Spring Boot domain services.
+AnimoRoll is a university enrollment demo. Students can browse courses, enroll, and view grades. Faculty can download class rosters and publish grades from a CSV file.
 
-## Build and run with Docker
+## Quick start with a populated database
 
-Install Docker Desktop with Linux containers, Docker Compose 2.24.4 or newer, and JDK 21 or newer. Docker supplies Node.js, Maven, and Java 21 for the image builds. The host JDK runs the credential setup.
+### 1. Install the prerequisites
 
-From the repository root, generate `.env` and the JWT signing keys. Use `java scripts/GenerateKeys.java` on macOS or Linux.
+1. Install [Docker Desktop](https://docs.docker.com/desktop/) and open it. On Windows, use Linux containers. On Linux, Docker Engine with the Compose plugin also works.
+2. Install [JDK 21](https://adoptium.net/temurin/releases/?version=21) or newer. Open a new terminal and run `java -version` and `docker compose version`. Use Compose 2.24.4 or newer. Docker supplies Node.js, Maven, and PostgreSQL for the demo.
 
-```powershell
-./scripts/setup.ps1
+### 2. Open the source folder
+
+On GitHub, choose **Code → Download ZIP**, then extract the ZIP. You can also clone the repository if you have Git.
+
+```sh
+git clone https://github.com/chiwasushuba/STDISCMP4.git
+cd STDISCMP4
 ```
 
-If you want to use the example password below, set it before the first start. Then build the images, start the applications and databases, and check their status.
+Open a terminal in the folder that contains `compose.yaml` and `README.md`. On Windows, open that folder in File Explorer, type `powershell` in the address bar, and press Enter.
+
+### 3. Start the app
+
+**Windows PowerShell**
 
 ```powershell
-docker compose build
-docker compose up -d
-docker compose ps
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-demo.ps1
 ```
 
-Docker builds the Vite frontend first. Maven compiles the Java services and bundles the Vite output into the `web-app` JAR. The first build downloads images and dependencies. Once the services finish starting, open **http://localhost:8080**. If a service is still initializing, use the retry control after it starts.
+**macOS or Linux**
 
-### Example login credentials
+On the first run, generate the local configuration and signing keys. The `chmod` commands keep the `secrets/` folder private on your computer and let the containers read the key files Docker mounts into them.
 
-| Email | Role |
+```sh
+java scripts/GenerateKeys.java && chmod 700 secrets && chmod 644 secrets/public.pem secrets/private.pem
+```
+
+Then build and start the stack.
+
+```sh
+docker compose up --build --wait --wait-timeout 180
+```
+
+The first run downloads images and build dependencies. Wait for startup to finish, then open [http://localhost:8080](http://localhost:8080). The three PostgreSQL databases populate automatically on the first run.
+
+### 4. Sign in and check the sample data
+
+1. Open `.env` in the source folder with a text editor. On Windows, you can run `notepad .env`. On macOS and Linux, enable hidden files in your file manager to see it.
+2. Find `DEMO_PASSWORD=` and copy the value after `=`. All three demo accounts use this generated password when the databases are first created. Keep `.env` and `secrets/` with this installation.
+3. Sign in with one of the accounts below.
+
+   | Email | Role |
+   | --- | --- |
+   | `student@animoroll.edu` | Alex Morgan, student 2024-001 |
+   | `student2@animoroll.edu` | Sam Rivera, student 2024-002 |
+   | `faculty@animoroll.edu` | Dr. Jordan Reyes, faculty FAC-001 |
+
+4. As the student, open **Course catalog** to find **Distributed Systems** and **Grade history** to see completed courses. **My enrollment** starts empty so you can try enrolling.
+5. Sign out, sign in as faculty, and select **CS 301**. The current roster starts with Alex Morgan and Sam Rivera, ready for a grade upload. See the [demo walkthrough](docs/demo.md) for a full run-through.
+
+Every fresh installation includes three demo accounts, six courses, five published grade rows, and two ungraded rows in the CS 301 roster. Re-running startup keeps existing credentials, enrollments, and grades. Changing `DEMO_PASSWORD` in `.env` after the first start leaves existing account passwords as they were.
+
+### 5. Stop the app and come back later
+
+```sh
+docker compose down
+```
+
+This stops the app and keeps your data. To resume, repeat [step 3](#3-start-the-app).
+
+To reset a **disposable local demo**, run `docker compose down --volumes`, then repeat step 3. The reset deletes all three databases, including any enrollments and grades you added. Starting again restores the original sample data.
+
+### If startup or login fails
+
+| What you see | What to do |
 | --- | --- |
-| `student@animoroll.edu` | Alex Morgan, student 2024-001 |
-| `student2@animoroll.edu` | Sam Rivera, student 2024-002 |
-| `faculty@animoroll.edu` | Dr. Jordan Reyes, faculty FAC-001 |
-
-All three accounts share the initial password from `DEMO_PASSWORD` in your local `.env`. Setup generates a random value. To use a fixed example on a fresh, local demo database, replace that line after setup and before starting the app for the first time.
-
-```dotenv
-DEMO_PASSWORD=AnimoRoll-Demo-2026
-```
-
-For example, sign in as `student@animoroll.edu` with `AnimoRoll-Demo-2026` after making that change. The identity service seeds demo accounts when `DEMO_ENABLED=true`, which the local Compose file enables. Existing accounts keep the password they were created with. Setup also preserves existing `.env` and key files.
+| Docker is unavailable | Open Docker Desktop, wait for the engine to start, and repeat step 3. |
+| `java` is missing or too old | Install a JDK, open a new terminal, and confirm `java -version` shows 21 or newer. |
+| `port is already allocated` | Run `docker ps` to find the container using port 8080 or 5541–5543. If it is the old `northstar` stack, follow the upgrade instructions below or stop it with `docker compose -p northstar down` before starting the fresh demo. |
+| A service fails to become healthy | Run `docker compose ps -a` and `docker compose logs --tail 80` from the source folder to find the failing service and its startup error. |
+| The login form rejects your password | Use a demo email from the table and the password from this installation's `.env`. If that value was edited after the database was created, use the password that was set on first startup. |
 
 ### Upgrade an existing Northstar installation
 
 To reuse the PostgreSQL volumes from the old Compose project, rebuild all five application nodes together under the existing project name.
 
 ```powershell
-docker compose -p northstar up -d --build
+docker compose -p northstar up --build --wait --wait-timeout 180
 ```
 
 Use `-p northstar` with subsequent Compose commands for that installation. The default `animoroll` project creates its own volumes. The identity migration updates the three demo emails in the existing database while preserving account IDs, passwords, and linked records. Sign in again with the new email after the upgrade. For a multi-machine setup, deploy the rebuilt nodes together because their gRPC service names and JWT issuer and audience changed.
-
-Keep `.env` and `secrets/` with your local installation. The identity service uses the private key to sign tokens. Services use the public key to verify them. On Linux Docker hosts, grant the container user read access to the private key with `sudo chown 10001:10001 secrets/private.pem` and `sudo chmod 600 secrets/private.pem`.
 
 ## Compile and run locally on Windows
 
 Install JDK 21 or newer, Node.js 22.12+ or 24 LTS, and Docker Desktop for the three PostgreSQL databases. The Maven wrapper downloads Maven 3.9.11. If the full Docker stack is running, stop it with `docker compose down` to free port 8080 before launching the local Java processes.
 
-Run setup, then build the application from the repository root in PowerShell. For the fixed example login, edit `.env` after setup and before running the final command.
+1. Open PowerShell in the source folder and generate the credentials.
 
-```powershell
-./scripts/setup.ps1
-npm.cmd --prefix frontend ci
-npm.cmd --prefix frontend run build
-./mvnw.cmd -B -DskipTests clean package
-./scripts/run-local.ps1 -SkipBuild
-```
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+   ```
 
-Vite writes `frontend/dist/`. Maven writes the service JARs into each module’s `target/` folder and includes the Vite bundle in `web-app/target/web-app-1.0.0.jar`. The last command starts the PostgreSQL containers and launches the five Java applications. Open **http://localhost:8080**.
+2. Build the Vite frontend and Java services, start PostgreSQL in Docker, and launch the five Java processes on Windows.
 
-After setup, `./scripts/run-local.ps1` also handles compilation and startup in one command. Local logs are in `.tools/logs/`. Run `./scripts/stop-local.ps1` to stop the Java processes. The database containers and volumes remain available.
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-local.ps1
+   ```
+
+3. Open [http://localhost:8080](http://localhost:8080) and follow the sign-in steps above. If the browser cannot connect yet, check `.tools/logs/web.log` for startup progress. Use `-SkipBuild` when rerunning the launcher with existing build outputs.
+4. To stop the Java processes, run the command below. Then run `docker compose down` if you also want to stop the database containers. Your database data is saved in Docker volumes.
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\stop-local.ps1
+   ```
 
 ### Live frontend development
 
 For live frontend changes, keep Spring running on port 8080 from either stack and run:
 
 ```powershell
-npm --prefix frontend ci
-npm --prefix frontend run dev
+npm.cmd --prefix frontend ci
+npm.cmd --prefix frontend run dev
 ```
 
 Open **http://127.0.0.1:5173**. Vite proxies `/api` to Spring. In a packaged build, Spring serves the UI and API on port 8080.
@@ -89,20 +135,20 @@ Run the JVM tests with Docker running so Testcontainers can start PostgreSQL.
 
 On macOS or Linux, use `sh ./mvnw -B verify`.
 
-Browser checks use Node.js and Playwright as development-only tools. Start the full Docker stack first, then:
+Browser checks use Node.js and Playwright. Start the app with the [quick start](#quick-start-with-a-populated-database) before running these commands in PowerShell.
 
 ```powershell
-npm ci
-npx playwright install chromium
-npm run test:e2e -- --project=journeys
+npm.cmd ci
+npx.cmd playwright install chromium
+npm.cmd run test:e2e -- --project=journeys
 $env:TEST_FAULTS = '1'
-npm run test:faults
+npm.cmd run test:faults
 Remove-Item Env:TEST_FAULTS
 ```
 
-Fault tests intentionally stop and restart local Docker containers, then check unaffected features and recovery. Run them against the local Docker stack only. They restore stopped containers in `finally` blocks. The journey tests use the synthetic demo accounts and update their enrollment and grade records. Browser captures are written to `.evidence/browser/`. The tests read credentials locally and disable tracing.
+Run fault tests against the default local Compose project (`animoroll`). They stop and restart its containers to check recovery and verify that other features keep working. The journey tests update enrollment and grade records for the demo accounts. Browser captures go in `.evidence/browser/`. The tests read credentials locally and disable tracing.
 
-Formatting: `npm run format:web:check` checks HTML/CSS/JS. `./mvnw.cmd -B com.spotify.fmt:fmt-maven-plugin:2.29:check` checks Java; use the plugin's `format` goal to apply formatting.
+Run `npm.cmd run format:web:check` to check HTML, CSS, and JavaScript formatting. Run `./mvnw.cmd -B com.spotify.fmt:fmt-maven-plugin:2.29:check` to check Java formatting.
 
 ## What is implemented
 
@@ -140,7 +186,7 @@ identity-service/   Accounts, password verification, JWT signing, refresh sessio
 course-service/     Catalog, enrollment, seat allocation
 grade-service/      Teaching assignments, rosters, historical and uploaded grades
 deployment/         Configuration for separate networked machines
-scripts/            Local credentials and process management
+scripts/            Demo launcher, local credentials, and process management
 docs/               Architecture, deployment, and demonstration guide
 tests/              Playwright journeys and service outage checks
 secrets/            Locally generated JWT keys, excluded from Git
@@ -163,11 +209,8 @@ docker compose ps
 docker compose logs --tail 80 grade-service
 docker compose stop grade-service
 docker compose start grade-service
-docker compose down
 ```
-
-`down` preserves the databases. Do not add `--volumes` unless you intend to delete all enrollment, session, and grade data.
 
 ## Create a source archive
 
-Run `./scripts/package-source.ps1` to create a local `deliverables/animoroll-source-*.zip` from the current Vite and Spring sources. The archive includes this README, contracts, tests, build scripts, and deployment instructions. It excludes credentials, databases, downloaded tools, dependencies, and build outputs. The recipient runs setup to generate local credentials.
+Run `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package-source.ps1` to create `deliverables/animoroll-source-*.zip`. The archive includes the source, tests, build scripts, and this guide. The recipient can extract it and follow the [quick start](#quick-start-with-a-populated-database).

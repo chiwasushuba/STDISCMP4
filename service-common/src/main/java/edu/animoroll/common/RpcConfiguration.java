@@ -2,9 +2,12 @@ package edu.animoroll.common;
 
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import java.io.IOException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
@@ -17,7 +20,7 @@ public class RpcConfiguration {
     return Tokens.decoder(Tokens.publicKey(key));
   }
 
-  @Bean(initMethod = "start", destroyMethod = "shutdown")
+  @Bean(destroyMethod = "shutdown")
   @ConditionalOnProperty("rpc.server.port")
   Server rpcServer(
       @Value("${rpc.server.port}") int port, List<BindableService> services, JwtDecoder decoder) {
@@ -50,5 +53,18 @@ public class RpcConfiguration {
     services.forEach(
         service -> builder.addService(ServerInterceptors.intercept(service, security)));
     return builder.build();
+  }
+
+  @Bean
+  @ConditionalOnProperty("rpc.server.port")
+  ApplicationListener<ApplicationReadyEvent> startRpcServer(Server server) {
+    // Demo accounts and other startup tasks must finish before the RPC port accepts traffic.
+    return event -> {
+      try {
+        server.start();
+      } catch (IOException exception) {
+        throw new IllegalStateException("Could not start the gRPC server.", exception);
+      }
+    };
   }
 }
